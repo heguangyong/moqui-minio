@@ -22,51 +22,77 @@ along with this software (see the LICENSE.md file). If not, see
     </transition>
     <transition name="deleteBucket">
         <parameter name="bucketId"/>
+        <parameter name="userId"/>
         <service-call name="moqui.netdisk.delete#Bucket" in-map="context"/>
         <default-response url="."/>
     </transition>
-    <actions>
-        <service-call name="moqui.netdisk.list#Bucket" out-map="bucketList" in-map="[userId: userId]"/>
-    </actions>
+    <pre-actions>
+        <set field="html_title" value="Bucket Management"/>
+        <set field="html_description" value="A page for managing storage buckets"/>
+        <set field="html_keywords" value="netdisk,bucket,create,delete"/>
+    </pre-actions>
     <widgets>
         <container-box>
-            <box-header title="${ec.l10n.localize('Manage Buckets')}"/>
+            <box-header><label text="${ec.l10n.localize('Manage Buckets')}" type="h5"/></box-header>
+            <box-toolbar>
+                <container-dialog id="CreateBucketDialog" button-text="${ec.l10n.localize('Create Bucket')}">
+                    <form-single name="CreateBucketForm" transition="createBucket" focus-field="bucketId">
+                        <field name="bucketId">
+                            <default-field title="${ec.l10n.localize('Bucket ID')}" tooltip="The ID of the storage bucket">
+                                <text-line/>
+                            </default-field>
+                        </field>
+                        <field name="userId">
+                            <default-field><hidden/></default-field>
+                        </field>
+                        <field name="quotaLimit">
+                            <default-field title="${ec.l10n.localize('Quota Limit (Bytes)')}" tooltip="Storage limit in bytes">
+                                <text-line default-value="104857600"/>
+                            </default-field>
+                        </field>
+                        <field name="submitButton">
+                            <default-field title="${ec.l10n.localize('Create')}"><submit/></default-field>
+                        </field>
+                    </form-single>
+                </container-dialog>
+            </box-toolbar>
             <box-body>
-                <form-single name="CreateBucketForm" transition="createBucket">
-                    <field name="bucketId">
-                        <default-field title="Bucket ID"><text/></default-field>
-                    </field>
-                    <field name="userId">
-                        <default-field><hidden/></default-field>
-                    </field>
-                    <field name="submit">
-                        <default-field><submit text="Create Bucket"/></default-field>
-                    </field>
-                </form-single>
-                <form-list name="BucketListForm" list="bucketList" header-dialog="true">
+                <form-list name="BucketListForm" list="bucketList" skip-form="true" header-dialog="true"
+                           select-columns="true" show-csv-button="true" show-text-button="true" show-pdf-button="true">
                     <entity-find entity-name="moqui.netdisk.Bucket" list="bucketList" limit="50">
+                        <search-form-inputs default-order-by="^createdDate"/>
                         <econdition field-name="userId" value="${userId}"/>
                     </entity-find>
-                    <field name="bucketId">
-                        <header-field title="Bucket ID" show-order-by="true"><text-find size="30" default-operator="equals"/></header-field>
-                        <default-field><display also-hidden="false"/></default-field>
+                    <field name="bucketId" print-width="20" print-width-type="characters">
+                        <header-field title="${ec.l10n.localize('Bucket ID')}" show-order-by="case-insensitive">
+                            <text-find size="30" default-operator="equals"/>
+                        </header-field>
+                        <default-field><display/></default-field>
                     </field>
-                    <field name="quotaLimit">
-                        <header-field title="Quota Limit (Bytes)" show-order-by="true"><text-find size="20" default-operator="equals"/></header-field>
-                        <default-field><display also-hidden="false"/></default-field>
+                    <field name="quotaLimit" print-width="20">
+                        <header-field title="${ec.l10n.localize('Quota Limit (Bytes)')}" show-order-by="true">
+                            <text-find size="20" default-operator="equals"/>
+                        </header-field>
+                        <default-field><display/></default-field>
                     </field>
-                    <field name="createdDate">
-                        <header-field title="Created Date" show-order-by="true"><date-period time="true"/></header-field>
-                        <default-field><display also-hidden="false"/></default-field>
+                    <field name="createdDate" print-width="16" print-width-type="characters">
+                        <header-field title="${ec.l10n.localize('Created Date')}" show-order-by="true">
+                            <date-period time="true"/>
+                        </header-field>
+                        <default-field><display/></default-field>
                     </field>
-                    <field name="delete">
-                        <header-field title="Action"/>
+                    <field name="delete" print-width="10">
+                        <header-field title="${ec.l10n.localize('Action')}"/>
                         <default-field>
-                            <link url="deleteBucket" text="Delete" link-type="anchor">
+                            <link url="deleteBucket" text="${ec.l10n.localize('Delete')}" link-type="anchor">
                                 <parameter name="bucketId" from="bucketId"/>
                                 <parameter name="userId" from="userId"/>
                             </link>
                         </default-field>
+                    </field>
+                    <field name="findButton">
+                        <header-field title=""><submit text="${ec.l10n.localize('Find')}"/></header-field>
+                        <default-field><ignored/></default-field>
                     </field>
                 </form-list>
             </box-body>
