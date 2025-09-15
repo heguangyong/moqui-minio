@@ -14,9 +14,16 @@ along with this software (see the LICENSE.md file). If not, see
 -->
 <screen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/xml-screen-3.xsd"
-        include-child-content="true" require-authentication="false" menu-image="fa fa-flash" menu-image-type="icon">
-
+        require-authentication="true" default-menu-title="Netdisk" menu-image="fa fa-cloud" menu-image-type="icon">
+    <subscreens default-item="BucketManagement">
+        <subscreens-item name="BucketManagement" location="component://netdisk/screen/BucketManagement.xml" menu-title="Bucket Management" menu-index="1"/>
+    </subscreens>
     <widgets>
-        <label text="Hello World!" style="font-size: 24px; font-weight: bold; color: #00f; margin: 20px;"/>
+        <container-box>
+            <box-header title="${ec.l10n.localize('Netdisk Application')}"/>
+            <box-body>
+                <subscreens-panel id="netdisk-app" type="tab"/>
+            </box-body>
+        </container-box>
     </widgets>
 </screen>
