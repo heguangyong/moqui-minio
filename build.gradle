@@ -50,7 +50,8 @@ dependencies {
     implementation project(':framework')
     testImplementation project(':framework').configurations.testImplementation.allDependencies
 
-    // Add netdisk dependencies here
+    // Add MinIO dependency
+    implementation 'io.minio:minio:8.5.12'
 
 }
 
