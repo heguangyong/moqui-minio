@@ -20,6 +20,8 @@ import org.moqui.impl.service.ServiceRunner
 import org.moqui.service.ServiceException
 import org.moqui.impl.service.minio.MinioToolFactory
 import io.minio.MinioClient
+import io.minio.MakeBucketArgs
+import io.minio.RemoveBucketArgs
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -54,22 +56,30 @@ class MinioServiceRunner implements ServiceRunner {
         try {
             switch (location) {
                 case "minio://makeBucket":
-                    minioClient.makeBucket((String) parameters.bucketId)
+                    minioClient.makeBucket(
+                            MakeBucketArgs.builder()
+                                    .bucket(parameters.bucketId.toString())
+                                    .build()
+                    )
                     sfi.ecfi.entity.makeValue("moqui.netdisk.Bucket").setAll([
-                            bucketId: parameters.bucketId,
-                            userId: parameters.userId,
-                            bucketName: parameters.bucketName,
-                            quotaLimit: parameters.quotaLimit,
+                            bucketId   : parameters.bucketId,
+                            userId     : parameters.userId,
+                            bucketName : parameters.bucketName,
+                            quotaLimit : parameters.quotaLimit,
                             createdDate: sfi.ecfi.executionContext.user.nowTimestamp
                     ]).create()
                     result.bucketId = parameters.bucketId
                     break
                 case "minio://removeBucket":
-                    minioClient.removeBucket((String) parameters.bucketId)
+                    minioClient.removeBucket(
+                            RemoveBucketArgs.builder()
+                                    .bucket(parameters.bucketId.toString())
+                                    .build()
+                    )
                     sfi.ecfi.entity.find("moqui.netdisk.Bucket")
                             .condition("bucketId", parameters.bucketId)
                             .condition("userId", parameters.userId)
-                            .delete()
+                            .deleteAll()
                     break
                 default:
                     throw new ServiceException("Unsupported MinIO location: ${location}")
