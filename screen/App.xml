@@ -14,15 +14,25 @@ along with this software (see the LICENSE.md file). If not, see
 -->
 <screen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/xml-screen-3.xsd"
-        require-authentication="true" default-menu-title="Netdisk" menu-image="fa fa-cloud" menu-image-type="icon">
+        default-menu-title="Netdisk" default-menu-index="10" default-menu-include="true"
+        menu-image="fa fa-cloud" menu-image-type="icon" require-authentication="true">
     <subscreens default-item="BucketManagement">
-        <subscreens-item name="BucketManagement" location="component://netdisk/screen/BucketManagement.xml" menu-title="Bucket Management" menu-index="1"/>
+        <subscreens-item name="BucketManagement" location="component://netdisk/screen/BucketManagement.xml"
+                         menu-title="${ec.l10n.localize('Bucket Management')}" menu-index="1" menu-include="true"/>
     </subscreens>
+    <pre-actions>
+        <set field="html_title" value="Netdisk Application"/>
+        <set field="html_description" value="Manage your MinIO storage buckets"/>
+        <set field="html_keywords" value="netdisk,bucket,storage,minio"/>
+    </pre-actions>
     <widgets>
-        <container-box>
-            <box-header title="${ec.l10n.localize('Netdisk Application')}"/>
+        <container-box id="netdisk-app-box">
+            <box-header><label text="${ec.l10n.localize('Netdisk Application')}" type="h2"/></box-header>
+            <box-toolbar>
+                <subscreens-menu id="netdisk-menu" type="tab"/>
+            </box-toolbar>
             <box-body>
-                <subscreens-panel id="netdisk-app" type="tab"/>
+                <subscreens-panel id="netdisk-panel" type="tab"/>
             </box-body>
         </container-box>
     </widgets>

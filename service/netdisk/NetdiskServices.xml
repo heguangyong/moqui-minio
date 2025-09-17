@@ -10,13 +10,13 @@ This software is in the public domain under CC0 1.0 Universal plus a Grant of Pa
             <parameter name="bucketId" type="String" required="true"/>
             <parameter name="userId" type="String" required="true"/>
             <parameter name="bucketName" type="String"/>
-            <parameter name="quotaLimit" type="Long" default-value="5368709120"/> <!-- 5GB -->
+            <parameter name="quotaLimit" type="Long" default-value="5368709120"/>
         </in-parameters>
         <out-parameters>
             <parameter name="bucketId" type="String"/>
         </out-parameters>
     </service>
-    <service verb="list" noun="Bucket" type="entity-auto" authenticate="true">
+    <service verb="list" noun="Bucket" type="script" location="component://netdisk/script/ListBucket.groovy" authenticate="true">
         <description>List buckets for a specific user</description>
         <in-parameters>
             <parameter name="userId" type="String" required="true"/>

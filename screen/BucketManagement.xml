@@ -4,68 +4,68 @@ This software is in the public domain under CC0 1.0 Universal plus a Grant of Pa
 -->
 <screen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/xml-screen-3.xsd"
-        default-menu-title="Bucket Management" require-authentication="true">
-    <parameter name="userId" from="ec.user.userAccount.userId"/>
+        default-menu-title="Bucket Management" default-menu-index="10" default-menu-include="true"
+        require-authentication="true">
     <transition name="createBucket">
-        <service-call name="moqui.netdisk.create#Bucket" in-map="context"/>
+        <service-call name="netdisk.create#Bucket" in-map="context"/>
         <default-response url="."/>
     </transition>
     <transition name="deleteBucket">
         <parameter name="bucketId"/>
         <parameter name="userId"/>
-        <service-call name="moqui.netdisk.delete#Bucket" in-map="context"/>
+        <service-call name="netdisk.delete#Bucket" in-map="context"/>
         <default-response url="."/>
     </transition>
     <pre-actions>
-        <service-call name="moqui.netdisk.list#Bucket" in-map="[userId: userId]" out-map="context"/>
+        <set field="userId" from="ec.user.userId"/>
+        <service-call name="netdisk.list#Bucket" in-map="[userId: userId]" out-map="context"/>
         <set field="html_title" value="Bucket Management"/>
-        <set field="html_description" value="Manage your storage buckets"/>
-        <set field="html_keywords" value="netdisk,bucket,create,delete"/>
+        <set field="html_description" value="Manage your MinIO storage buckets"/>
+        <set field="html_keywords" value="netdisk,bucket,storage,minio"/>
     </pre-actions>
     <widgets>
-        <container-box>
-            <box-header><label text="${ec.l10n.localize('Manage Buckets')}" type="h5"/></box-header>
+        <container-box id="find-bucket-box">
+            <box-header><label text="${ec.l10n.localize('Find Buckets')}" type="h3"/></box-header>
             <box-toolbar>
-                <container-dialog id="CreateBucketDialog" button-text="${ec.l10n.localize('Create Bucket')}">
+                <container-dialog id="CreateBucketDialog" button-text="${ec.l10n.localize('Create Bucket')}" type="primary">
                     <form-single name="CreateBucketForm" transition="createBucket" focus-field="bucketId">
-                        <field name="bucketId"><default-field title="Bucket ID"><text-line/></default-field></field>
-                        <field name="bucketName"><default-field title="Bucket Name"><text-line/></default-field></field>
+                        <field name="bucketId"><default-field title="${ec.l10n.localize('Bucket ID')}"><text-line size="20"/></default-field></field>
+                        <field name="bucketName"><default-field title="${ec.l10n.localize('Bucket Name')}"><text-line size="20"/></default-field></field>
                         <field name="userId"><default-field><hidden/></default-field></field>
-                        <field name="quotaLimit"><default-field title="Quota Limit (Bytes)"><text-line default-value="5368709120"/></default-field></field>
-                        <field name="submitButton"><default-field title="Create"><submit/></default-field></field>
+                        <field name="quotaLimit"><default-field title="${ec.l10n.localize('Quota Limit (Bytes)')}"><text-line size="15" default-value="5368709120"/></default-field></field>
+                        <field name="submitButton"><default-field title="${ec.l10n.localize('Save')}"><submit/></default-field></field>
                     </form-single>
                 </container-dialog>
             </box-toolbar>
             <box-body>
-                <form-list name="BucketListForm" list="bucketList" skip-form="true" header-dialog="true"
-                           select-columns="true" show-csv-button="true">
+                <form-list name="ListBuckets" list="bucketList" paginate="true" skip-form="true" header-dialog="true" select-columns="true" show-csv-button="true">
                     <field name="bucketId">
-                        <header-field title="Bucket ID" show-order-by="case-insensitive"><text-find size="20"/></header-field>
+                        <header-field title="${ec.l10n.localize('Bucket ID')}" show-order-by="case-insensitive"><text-find size="20"/></header-field>
                         <default-field><display/></default-field>
                     </field>
                     <field name="bucketName">
-                        <header-field title="Bucket Name" show-order-by="case-insensitive"><text-find size="20"/></header-field>
+                        <header-field title="${ec.l10n.localize('Bucket Name')}" show-order-by="case-insensitive"><text-find size="20"/></header-field>
                         <default-field><display/></default-field>
                     </field>
                     <field name="quotaLimit">
-                        <header-field title="Quota Limit (Bytes)" show-order-by="true"><text-find size="15"/></header-field>
+                        <header-field title="${ec.l10n.localize('Quota Limit (Bytes)')}" show-order-by="true"><text-find size="15"/></header-field>
                         <default-field><display/></default-field>
                     </field>
                     <field name="createdDate">
-                        <header-field title="Created Date" show-order-by="true"><date-period time="true"/></header-field>
-                        <default-field><display/></default-field>
+                        <header-field title="${ec.l10n.localize('Created Date')}" show-order-by="true"><date-period time="true"/></header-field>
+                        <default-field><display format="yyyy-MM-dd HH:mm:ss"/></default-field>
                     </field>
                     <field name="delete">
-                        <header-field title="Action"/>
+                        <header-field title="${ec.l10n.localize('Actions')}"/>
                         <default-field>
-                            <link url="deleteBucket" text="Delete" link-type="anchor">
+                            <link url="deleteBucket" text="${ec.l10n.localize('Delete')}" link-type="anchor">
                                 <parameter name="bucketId" from="bucketId"/>
                                 <parameter name="userId" from="userId"/>
                             </link>
                         </default-field>
                     </field>
                     <field name="findButton">
-                        <header-field><submit text="Find"/></header-field>
+                        <header-field><submit text="${ec.l10n.localize('Find')}"/></header-field>
                         <default-field><ignored/></default-field>
                     </field>
                 </form-list>
