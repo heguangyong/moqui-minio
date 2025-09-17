@@ -19,5 +19,37 @@ along with this software (see the LICENSE.md file). If not, see
         name="netdisk" displayName="netdisk API" version="0.0.0" description="">
 
     <!-- netdisk & Related Rest API -->
+    <resource name="test">
+        <method type="GET">
+            <service name="netdisk.test#MinioConnection"/>
+        </method>
+        <method type="POST">
+            <service name="netdisk.test#MinioConnection"/>
+        </method>
+    </resource>
+    
+    <resource name="create">
+        <resource name="Bucket">
+            <method type="POST">
+                <service name="netdisk.create#Bucket"/>
+            </method>
+        </resource>
+    </resource>
+    
+    <resource name="delete">
+        <resource name="Bucket">
+            <method type="POST">
+                <service name="netdisk.delete#Bucket"/>
+            </method>
+        </resource>
+    </resource>
+    
+    <resource name="list">
+        <resource name="Bucket">
+            <method type="GET">
+                <service name="netdisk.list#Bucket"/>
+            </method>
+        </resource>
+    </resource>
 
 </resource>

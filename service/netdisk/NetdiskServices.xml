@@ -1,21 +1,34 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!--
-This software is in the public domain under CC0 1.0 Universal plus a Grant of Patent License.
--->
-<services xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-          xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/service-definition-3.xsd">
-    <service verb="create" noun="Bucket" type="script" location="component://netdisk/script/CreateBucket.groovy" authenticate="true" allow-remote="true">
-        <description>Create a MinIO bucket and store its metadata in the database</description>
+<services xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/service-definition-3.xsd">
+    <service verb="test" noun="MinioConnection" type="script" location="component://netdisk/script/TestMinioConnection.groovy">
+        <description>Test MinIO connection</description>
+        <out-parameters>
+            <parameter name="success" type="Boolean"/>
+            <parameter name="message" type="String"/>
+        </out-parameters>
+    </service>
+    
+    <service verb="create" noun="Bucket" type="script" location="component://netdisk/script/CreateBucket.groovy" authenticate="true">
+        <description>Create a new bucket</description>
         <in-parameters>
             <parameter name="bucketId" type="String" required="true"/>
             <parameter name="userId" type="String" required="true"/>
-            <parameter name="bucketName" type="String"/>
-            <parameter name="quotaLimit" type="Long" default-value="5368709120"/>
+            <parameter name="bucketName" type="String" required="true"/>
+            <parameter name="quotaLimit" type="Long" required="true"/>
         </in-parameters>
         <out-parameters>
             <parameter name="bucketId" type="String"/>
         </out-parameters>
     </service>
+    
+    <service verb="delete" noun="Bucket" type="script" location="component://netdisk/script/DeleteBucket.groovy" authenticate="true">
+        <description>Delete a bucket</description>
+        <in-parameters>
+            <parameter name="bucketId" type="String" required="true"/>
+            <parameter name="userId" type="String" required="true"/>
+        </in-parameters>
+    </service>
+    
     <service verb="list" noun="Bucket" type="script" location="component://netdisk/script/ListBucket.groovy" authenticate="true">
         <description>List buckets for a specific user</description>
         <in-parameters>
@@ -24,12 +37,5 @@ This software is in the public domain under CC0 1.0 Universal plus a Grant of Pa
         <out-parameters>
             <parameter name="bucketList" type="List"/>
         </out-parameters>
-    </service>
-    <service verb="delete" noun="Bucket" type="script" location="component://netdisk/script/DeleteBucket.groovy" authenticate="true">
-        <description>Delete a MinIO bucket and its metadata</description>
-        <in-parameters>
-            <parameter name="bucketId" type="String" required="true"/>
-            <parameter name="userId" type="String" required="true"/>
-        </in-parameters>
     </service>
 </services>
