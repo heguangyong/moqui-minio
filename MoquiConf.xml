@@ -6,11 +6,9 @@
         <tool-factory class="org.moqui.impl.service.minio.MinioToolFactory" init-priority="20" disabled="false"/>
     </tools>
     <screen-facade>
-        <screen location="component://webroot/screen/webroot.xml">
-            <subscreens-item name="site" location="component://example/screen/ExampleSite.xml"/>
-        </screen>
         <screen location="component://webroot/screen/webroot/apps.xml">
-            <subscreens-item name="minio" menu-title="Minio" menu-index="10" location="component://moqui-minio/screen/App.xml"/>
+            <subscreens-item name="minio" menu-title="Minio" menu-index="10"
+                             location="component://moqui-minio/screen/App.xml"/>
         </screen>
     </screen-facade>
 </moqui-conf>
