@@ -5,15 +5,12 @@
     <tools>
         <tool-factory class="org.moqui.impl.service.minio.MinioToolFactory" init-priority="20" disabled="false"/>
     </tools>
-    <service-facade>
-        <service-file location="component://netdisk/service/netdisk/NetdiskServices.xml"/>
-    </service-facade>
     <screen-facade>
         <screen location="component://webroot/screen/webroot.xml">
             <subscreens-item name="site" location="component://example/screen/ExampleSite.xml"/>
         </screen>
         <screen location="component://webroot/screen/webroot/apps.xml">
-            <subscreens-item name="netdisk" menu-title="Netdisk" menu-index="10" location="component://netdisk/screen/App.xml"/>
+            <subscreens-item name="minio" menu-title="Minio" menu-index="10" location="component://minio/screen/App.xml"/>
         </screen>
     </screen-facade>
 </moqui-conf>
