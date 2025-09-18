@@ -27,8 +27,8 @@ class MinioToolFactory implements ToolFactory<MinioClient> {
     void init(ExecutionContextFactory ecf) {
         this.ecf = ecf
         String endpoint = System.getProperty("minio.endpoint") ?: "http://localhost:9000"
-        String accessKey = System.getProperty("minio.accessKey") ?: "minioadmin"
-        String secretKey = System.getProperty("minio.secretKey") ?: "minioadmin"
+        String accessKey = System.getProperty("minio.accessKey") ?: "admin"
+        String secretKey = System.getProperty("minio.secretKey") ?: "admin123"
         logger.info("Initializing MinioClient with endpoint ${endpoint}")
         minioClient = new MinioClient.Builder()
                 .endpoint(endpoint)

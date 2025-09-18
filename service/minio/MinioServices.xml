@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <services xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/service-definition-3.xsd">
-    <service verb="test" noun="MinioConnection" type="script" location="component://minio/script/TestMinioConnection.groovy">
+    <service verb="test" noun="MinioConnection" type="script" location="component://moqui-minio/script/TestMinioConnection.groovy">
         <description>Test MinIO connection</description>
         <out-parameters>
             <parameter name="success" type="Boolean"/>
@@ -8,7 +8,7 @@
         </out-parameters>
     </service>
     
-    <service verb="create" noun="Bucket" type="script" location="component://minio/script/CreateBucket.groovy" authenticate="true">
+    <service verb="create" noun="Bucket" type="script" location="component://moqui-minio/script/CreateBucket.groovy" authenticate="true">
         <description>Create a new bucket</description>
         <in-parameters>
             <parameter name="bucketId" type="String" required="true"/>
@@ -21,7 +21,7 @@
         </out-parameters>
     </service>
     
-    <service verb="delete" noun="Bucket" type="script" location="component://minio/script/DeleteBucket.groovy" authenticate="true">
+    <service verb="delete" noun="Bucket" type="script" location="component://moqui-minio/script/DeleteBucket.groovy" authenticate="true">
         <description>Delete a bucket</description>
         <in-parameters>
             <parameter name="bucketId" type="String" required="true"/>
@@ -29,7 +29,7 @@
         </in-parameters>
     </service>
     
-    <service verb="list" noun="Bucket" type="script" location="component://minio/script/ListBucket.groovy" authenticate="true">
+    <service verb="list" noun="Bucket" type="script" location="component://moqui-minio/script/ListBucket.groovy" authenticate="true">
         <description>List buckets for a specific user</description>
         <in-parameters>
             <parameter name="userId" type="String" required="true"/>

@@ -14,20 +14,20 @@ along with this software (see the LICENSE.md file). If not, see
 -->
 <screen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/xml-screen-3.xsd"
-        default-menu-title="Netdisk" default-menu-index="10" default-menu-include="true"
+        default-menu-title="Minio" default-menu-index="10" default-menu-include="true"
         menu-image="fa fa-cloud" menu-image-type="icon" require-authentication="true">
     <subscreens default-item="BucketManagement">
-        <subscreens-item name="BucketManagement" location="component://minio/screen/BucketManagement.xml"
+        <subscreens-item name="BucketManagement" location="component://moqui-minio/screen/BucketManagement.xml"
                          menu-title="${ec.l10n.localize('Bucket Management')}" menu-index="1" menu-include="true"/>
     </subscreens>
     <pre-actions>
-        <set field="html_title" value="Netdisk Application"/>
+        <set field="html_title" value="Minio Application"/>
         <set field="html_description" value="Manage your MinIO storage buckets"/>
         <set field="html_keywords" value="minio,bucket,storage,minio"/>
     </pre-actions>
     <widgets>
         <container-box id="minio-app-box">
-            <box-header><label text="${ec.l10n.localize('Netdisk Application')}" type="h2"/></box-header>
+            <box-header><label text="${ec.l10n.localize('Minio Application')}" type="h2"/></box-header>
             <box-toolbar>
                 <subscreens-menu id="minio-menu" type="tab"/>
             </box-toolbar>

@@ -10,7 +10,7 @@
             <subscreens-item name="site" location="component://example/screen/ExampleSite.xml"/>
         </screen>
         <screen location="component://webroot/screen/webroot/apps.xml">
-            <subscreens-item name="minio" menu-title="Minio" menu-index="10" location="component://minio/screen/App.xml"/>
+            <subscreens-item name="minio" menu-title="Minio" menu-index="10" location="component://moqui-minio/screen/App.xml"/>
         </screen>
     </screen-facade>
 </moqui-conf>
