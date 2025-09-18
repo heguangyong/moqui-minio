@@ -5,7 +5,7 @@ import io.minio.MinioClient
 def minioClient = ec.getTool("Minio")
 try {
     minioClient.makeBucket(bucketId)
-    ec.entity.makeValue("moqui.netdisk.Bucket").setAll([
+    ec.entity.makeValue("moqui.minio.Bucket").setAll([
             bucketId: bucketId,
             userId: userId,
             bucketName: bucketName,

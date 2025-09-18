@@ -17,22 +17,22 @@ along with this software (see the LICENSE.md file). If not, see
         default-menu-title="Netdisk" default-menu-index="10" default-menu-include="true"
         menu-image="fa fa-cloud" menu-image-type="icon" require-authentication="true">
     <subscreens default-item="BucketManagement">
-        <subscreens-item name="BucketManagement" location="component://netdisk/screen/BucketManagement.xml"
+        <subscreens-item name="BucketManagement" location="component://minio/screen/BucketManagement.xml"
                          menu-title="${ec.l10n.localize('Bucket Management')}" menu-index="1" menu-include="true"/>
     </subscreens>
     <pre-actions>
         <set field="html_title" value="Netdisk Application"/>
         <set field="html_description" value="Manage your MinIO storage buckets"/>
-        <set field="html_keywords" value="netdisk,bucket,storage,minio"/>
+        <set field="html_keywords" value="minio,bucket,storage,minio"/>
     </pre-actions>
     <widgets>
-        <container-box id="netdisk-app-box">
+        <container-box id="minio-app-box">
             <box-header><label text="${ec.l10n.localize('Netdisk Application')}" type="h2"/></box-header>
             <box-toolbar>
-                <subscreens-menu id="netdisk-menu" type="tab"/>
+                <subscreens-menu id="minio-menu" type="tab"/>
             </box-toolbar>
             <box-body>
-                <subscreens-panel id="netdisk-panel" type="tab"/>
+                <subscreens-panel id="minio-panel" type="tab"/>
             </box-body>
         </container-box>
     </widgets>

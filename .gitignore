@@ -1,6 +1,6 @@
 # runtime added files
 build
-lib/netdisk-*.jar
+lib/minio-*.jar
 
 # IntelliJ IDEA files
 .idea/

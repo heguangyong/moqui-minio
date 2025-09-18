@@ -1,6 +1,6 @@
-## A netdisk component
+## A minio component
 
-netdisk Component with: 
+minio Component with: 
 
 - data
 - entities
@@ -17,7 +17,7 @@ To use run the following with moqui-framework [226f4826f97a0300d704b55a3aa63298a
 ./gradlew createComponent -Pcomponent=your-component
 ```
 
-See [this](https://forum.moqui.org/t/moqui-netdisk-component/725/7) for context
+See [this](https://forum.moqui.org/t/moqui-minio-component/725/7) for context
 
 ## 安装和配置
 

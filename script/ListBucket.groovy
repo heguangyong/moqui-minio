@@ -8,7 +8,7 @@ ExecutionContext ec = context.ec
 String userId = context.userId
 
 // Find buckets for the specified user
-EntityList bucketList = ec.entity.find("moqui.netdisk.Bucket").condition("userId", userId).list()
+EntityList bucketList = ec.entity.find("moqui.minio.Bucket").condition("userId", userId).list()
 
 // Put the bucket list in the context
 context.bucketList = bucketList

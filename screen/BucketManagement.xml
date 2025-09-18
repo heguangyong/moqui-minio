@@ -7,21 +7,21 @@ This software is in the public domain under CC0 1.0 Universal plus a Grant of Pa
         default-menu-title="Bucket Management" default-menu-index="10" default-menu-include="true"
         require-authentication="true">
     <transition name="createBucket">
-        <service-call name="netdisk.create#Bucket" in-map="context"/>
+        <service-call name="minio.create#Bucket" in-map="context"/>
         <default-response url="."/>
     </transition>
     <transition name="deleteBucket">
         <parameter name="bucketId"/>
         <parameter name="userId"/>
-        <service-call name="netdisk.delete#Bucket" in-map="context"/>
+        <service-call name="minio.delete#Bucket" in-map="context"/>
         <default-response url="."/>
     </transition>
     <pre-actions>
         <set field="userId" from="ec.user.userId"/>
-        <service-call name="netdisk.list#Bucket" in-map="[userId: userId]" out-map="context"/>
+        <service-call name="minio.list#Bucket" in-map="[userId: userId]" out-map="context"/>
         <set field="html_title" value="Bucket Management"/>
         <set field="html_description" value="Manage your MinIO storage buckets"/>
-        <set field="html_keywords" value="netdisk,bucket,storage,minio"/>
+        <set field="html_keywords" value="minio,bucket,storage,minio"/>
     </pre-actions>
     <widgets>
         <container-box id="find-bucket-box">

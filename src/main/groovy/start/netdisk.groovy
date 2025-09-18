@@ -11,7 +11,7 @@
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
  */
-package netdisk
+package minio
 
 import groovy.transform.CompileStatic
 import org.moqui.context.ExecutionContext
@@ -19,8 +19,8 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 @CompileStatic
-final class netdisk {
-    protected final static Logger logger = LoggerFactory.getLogger(netdisk.class)
+final class minio {
+    protected final static Logger logger = LoggerFactory.getLogger(minio.class)
 
     /**
      * Execution context used to access facades.
@@ -28,12 +28,12 @@ final class netdisk {
     private ExecutionContext ec
 
     /**
-     * Initializes a new {@code netdisk}.
+     * Initializes a new {@code minio}.
      */
-    netdisk(ExecutionContext ec) {
+    minio(ExecutionContext ec) {
         this.ec = ec
 
-        ec.logger.info("Starting netdisk component");
+        ec.logger.info("Starting minio component");
     }
 }
 

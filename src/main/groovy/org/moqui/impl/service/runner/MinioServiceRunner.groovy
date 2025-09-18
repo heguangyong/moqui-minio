@@ -61,7 +61,7 @@ class MinioServiceRunner implements ServiceRunner {
                                     .bucket(parameters.bucketId.toString())
                                     .build()
                     )
-                    sfi.ecfi.entity.makeValue("moqui.netdisk.Bucket").setAll([
+                    sfi.ecfi.entity.makeValue("moqui.minio.Bucket").setAll([
                             bucketId   : parameters.bucketId,
                             userId     : parameters.userId,
                             bucketName : parameters.bucketName,
@@ -76,7 +76,7 @@ class MinioServiceRunner implements ServiceRunner {
                                     .bucket(parameters.bucketId.toString())
                                     .build()
                     )
-                    sfi.ecfi.entity.find("moqui.netdisk.Bucket")
+                    sfi.ecfi.entity.find("moqui.minio.Bucket")
                             .condition("bucketId", parameters.bucketId)
                             .condition("userId", parameters.userId)
                             .deleteAll()

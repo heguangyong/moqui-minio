@@ -5,7 +5,7 @@ import io.minio.MinioClient
 def minioClient = ec.getTool("Minio")
 try {
     minioClient.removeBucket(bucketId)
-    ec.entity.find("moqui.netdisk.Bucket")
+    ec.entity.find("moqui.minio.Bucket")
             .condition("bucketId", bucketId)
             .condition("userId", userId)
             .delete()

@@ -81,7 +81,7 @@ test {
     maxParallelForks 1
 
     dependsOn cleanTest
-    include '**/netdiskSuite.class'
+    include '**/minioSuite.class'
 
     systemProperty 'moqui.runtime', moquiDir.absolutePath + '/runtime'
     systemProperty 'moqui.conf', 'conf/MoquiDevConf.xml'
