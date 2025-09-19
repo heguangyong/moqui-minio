@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<entity-facade-xml type="seed-initial">
+
+    <moqui.security.ArtifactGroup artifactGroupId="MINIO_APP" description="Minio App (via root screen)"/>
+    <moqui.security.ArtifactGroupMember artifactGroupId="MINIO_APP" artifactTypeEnumId="AT_XML_SCREEN"
+            inheritAuthz="Y" artifactName="component://moqui-minio/screen/App.xml"/>
+    <moqui.security.ArtifactAuthz artifactAuthzId="MINIO_AUTHZ_ALL" userGroupId="ADMIN" artifactGroupId="MINIO_APP"
+            authzTypeEnumId="AUTHZT_ALWAYS" authzActionEnumId="AUTHZA_ALL"/>
+
+    <moqui.security.ArtifactGroup artifactGroupId="MINIO_API" description="Minio REST API (via root resource)"/>
+    <moqui.security.ArtifactGroupMember artifactGroupId="MINIO_API" artifactTypeEnumId="AT_REST_PATH"
+            inheritAuthz="Y" artifactName="/minio"/>
+    <moqui.security.ArtifactAuthz artifactAuthzId="MINIOAPI_AUTHZ_ALL" userGroupId="ADMIN" artifactGroupId="MINIO_API"
+            authzTypeEnumId="AUTHZT_ALWAYS" authzActionEnumId="AUTHZA_ALL"/>
+</entity-facade-xml>

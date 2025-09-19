@@ -15,10 +15,10 @@ along with this software (see the LICENSE.md file). If not, see
 <screen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/xml-screen-3.xsd"
         include-child-content="true" require-authentication="false" menu-image="fa fa-cloud" menu-image-type="icon">
-<!--    <subscreens default-item="BucketManagement">-->
-<!--        <subscreens-item name="BucketManagement" location="component://moqui-minio/screen/BucketManagement.xml"-->
-<!--                         menu-title="${ec.l10n.localize('Bucket Management')}" menu-index="1" menu-include="true"/>-->
-<!--    </subscreens>-->
+    <subscreens default-item="BucketManagement">
+        <subscreens-item name="BucketManagement" location="component://moqui-minio/screen/BucketManagement.xml"
+                         menu-title="${ec.l10n.localize('Bucket Management')}" menu-index="1" menu-include="true"/>
+    </subscreens>
 <!--    <pre-actions>-->
 <!--        <set field="html_title" value="Minio Application"/>-->
 <!--        <set field="html_description" value="Manage your MinIO storage buckets"/>-->
