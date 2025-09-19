@@ -8,7 +8,6 @@
 
     <!-- 调试用，关闭权限 -->
     <actions>
-        <set field="artifactAuthzDisable" value="true"/>
         <set field="userId" from="ec.user.userId"/>
         <service-call name="minio.MinioServices.list#Bucket" in-map="[userId:userId]" out-map="context"/>
     </actions>

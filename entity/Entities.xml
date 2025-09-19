@@ -20,22 +20,162 @@ along with this software (see the LICENSE.md file). If not, see
 
     <entity entity-name="Bucket" package="moqui.minio">
         <field name="bucketId" type="id" is-pk="true">
-            <description>Primary identifier for the storage bucket</description>
+            <description>Primary identifier for the storage bucket (also used as MinIO bucket name)</description>
         </field>
         <field name="userId" type="id">
             <description>User who owns the bucket</description>
         </field>
+        <field name="bucketName" type="text-medium">
+            <description>Display name for the bucket (optional, different from bucketId)</description>
+        </field>
+        <field name="description" type="text-long">
+            <description>Bucket description</description>
+        </field>
         <field name="quotaLimit" type="number-integer">
             <description>Quota limit in bytes (default 5GB)</description>
+        </field>
+        <field name="usedStorage" type="number-integer" default="0">
+            <description>Currently used storage in bytes</description>
+        </field>
+        <field name="status" type="text-short" default="ACTIVE">
+            <description>Bucket status: ACTIVE, INACTIVE, DELETED, ERROR</description>
+        </field>
+        <field name="isPublic" type="text-indicator" default="N">
+            <description>Whether the bucket is publicly accessible</description>
+        </field>
+        <field name="region" type="text-short">
+            <description>MinIO region/zone</description>
+        </field>
+        <field name="versioning" type="text-indicator" default="N">
+            <description>Whether versioning is enabled</description>
+        </field>
+        <field name="encryption" type="text-indicator" default="N">
+            <description>Whether server-side encryption is enabled</description>
         </field>
         <field name="createdDate" type="date-time">
             <description>Timestamp when the bucket was created</description>
         </field>
-        <relationship type="one" title="User" related="moqui.security.UserAccount">
+        <field name="lastModifiedDate" type="date-time">
+            <description>Timestamp when the bucket was last modified</description>
+        </field>
+        <field name="lastAccessedDate" type="date-time">
+            <description>Timestamp when the bucket was last accessed</description>
+        </field>
+        <field name="createdByUserId" type="id">
+            <description>User who created the bucket</description>
+        </field>
+        <field name="tags" type="text-long">
+            <description>JSON formatted tags for the bucket</description>
+        </field>
+
+        <relationship type="one" title="Owner" related="moqui.security.UserAccount">
             <key-map field-name="userId"/>
         </relationship>
+        <relationship type="one" title="Creator" related="moqui.security.UserAccount">
+            <key-map field-name="createdByUserId" related="userId"/>
+        </relationship>
+
+        <!-- 索引 -->
+        <index name="BucketByUser">
+            <index-field name="userId"/>
+            <index-field name="status"/>
+        </index>
+        <index name="BucketByStatus">
+            <index-field name="status"/>
+        </index>
+        <index name="BucketByCreatedDate">
+            <index-field name="createdDate"/>
+        </index>
+
         <seed-data>
-            <moqui.minio.Bucket bucketId="default-bucket" userId="USER001" quotaLimit="5368709120" createdDate="2025-09-15 00:00:00"/>
+            <moqui.minio.Bucket bucketId="default-bucket" userId="USER001" bucketName="默认存储桶"
+                                quotaLimit="5368709120" status="ACTIVE" isPublic="N"
+                                versioning="N" encryption="N" createdDate="2025-09-15 00:00:00"
+                                createdByUserId="USER001"/>
+            <moqui.minio.Bucket bucketId="public-assets" userId="SYSTEM" bucketName="公共资源"
+                                quotaLimit="10737418240" status="ACTIVE" isPublic="Y"
+                                versioning="Y" encryption="Y" createdDate="2025-09-15 00:00:00"
+                                createdByUserId="SYSTEM"/>
         </seed-data>
     </entity>
+
+    <!-- Bucket 权限表 -->
+    <entity entity-name="BucketPermission" package="moqui.minio">
+        <field name="bucketId" type="id" is-pk="true"/>
+        <field name="userId" type="id" is-pk="true"/>
+        <field name="permissionType" type="text-short" is-pk="true">
+            <description>Permission type: READ, WRITE, DELETE, ADMIN</description>
+        </field>
+        <field name="grantedDate" type="date-time"/>
+        <field name="grantedByUserId" type="id"/>
+        <field name="expiryDate" type="date-time">
+            <description>Permission expiry date (optional)</description>
+        </field>
+
+        <relationship type="one" related="moqui.minio.Bucket">
+            <key-map field-name="bucketId"/>
+        </relationship>
+        <relationship type="one" title="PermissionUser" related="moqui.security.UserAccount">
+            <key-map field-name="userId"/>
+        </relationship>
+        <relationship type="one" title="GrantedByUser" related="moqui.security.UserAccount">
+            <key-map field-name="grantedByUserId" related="userId"/>
+        </relationship>
+    </entity>
+
+    <!-- Bucket 使用统计表 -->
+    <entity entity-name="BucketUsageLog" package="moqui.minio">
+        <field name="logId" type="id" is-pk="true"/>
+        <field name="bucketId" type="id"/>
+        <field name="userId" type="id"/>
+        <field name="operation" type="text-short">
+            <description>Operation type: UPLOAD, DOWNLOAD, DELETE, LIST</description>
+        </field>
+        <field name="objectName" type="text-long"/>
+        <field name="objectSize" type="number-integer"/>
+        <field name="operationDate" type="date-time"/>
+        <field name="ipAddress" type="text-short"/>
+        <field name="userAgent" type="text-long"/>
+        <field name="resultStatus" type="text-short">
+            <description>SUCCESS, FAILURE, PARTIAL</description>
+        </field>
+        <field name="errorMessage" type="text-long"/>
+
+        <relationship type="one" related="moqui.minio.Bucket">
+            <key-map field-name="bucketId"/>
+        </relationship>
+        <relationship type="one" related="moqui.security.UserAccount">
+            <key-map field-name="userId"/>
+        </relationship>
+
+        <index name="BucketUsageByDate">
+            <index-field name="bucketId"/>
+            <index-field name="operationDate"/>
+        </index>
+        <index name="BucketUsageByUser">
+            <index-field name="userId"/>
+            <index-field name="operationDate"/>
+        </index>
+    </entity>
+
+    <!-- Bucket 配置表 -->
+    <entity entity-name="BucketConfig" package="moqui.minio">
+        <field name="bucketId" type="id" is-pk="true"/>
+        <field name="configKey" type="text-medium" is-pk="true"/>
+        <field name="configValue" type="text-long"/>
+        <field name="configType" type="text-short">
+            <description>Config type: STRING, NUMBER, BOOLEAN, JSON</description>
+        </field>
+        <field name="description" type="text-long"/>
+        <field name="lastModifiedDate" type="date-time"/>
+        <field name="modifiedByUserId" type="id"/>
+
+        <relationship type="one" related="moqui.minio.Bucket">
+            <key-map field-name="bucketId"/>
+        </relationship>
+        <relationship type="one" title="ModifiedBy" related="moqui.security.UserAccount">
+            <key-map field-name="modifiedByUserId" related="userId"/>
+        </relationship>
+    </entity>
+
 </entities>

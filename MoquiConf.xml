@@ -2,9 +2,16 @@
 <!-- No copyright or license for configuration file, details here are not considered a creative work. -->
 <moqui-conf xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
             xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/moqui-conf-3.xsd">
+
+    <!-- MinIO 配置 -->
+    <default-property name="minio.endpoint" value="http://localhost:9000"/>
+    <default-property name="minio.accessKey" value="admin"/>
+    <default-property name="minio.secretKey" value="admin123"/>
+
     <tools>
         <tool-factory class="org.moqui.impl.service.minio.MinioToolFactory" init-priority="20" disabled="false"/>
     </tools>
+
     <screen-facade>
         <screen location="component://webroot/screen/webroot/apps.xml">
             <subscreens-item name="minio" menu-title="Minio" menu-index="10"

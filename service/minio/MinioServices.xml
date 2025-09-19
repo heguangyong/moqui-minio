@@ -1,41 +1,134 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<services xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/service-definition-3.xsd">
-    <service verb="test" noun="MinioConnection" type="script" location="component://moqui-minio/script/TestMinioConnection.groovy">
-        <description>Test MinIO connection</description>
-        <out-parameters>
-            <parameter name="success" type="Boolean"/>
-            <parameter name="message" type="String"/>
-        </out-parameters>
-    </service>
-    
-    <service verb="create" noun="Bucket" type="script" location="component://moqui-minio/script/CreateBucket.groovy" authenticate="true">
-        <description>Create a new bucket</description>
+<services xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/service-definition-3.xsd">
+
+    <!-- 创建桶 -->
+    <service verb="create" noun="Bucket" type="java"
+             location="org.moqui.impl.service.runner.MinioServiceRunner"
+             method="createBucket"
+             authenticate="true">
+        <description>Create a new bucket via MinioServiceRunner</description>
         <in-parameters>
-            <parameter name="bucketId" type="String" required="true"/>
-            <parameter name="userId" type="String" required="true"/>
-            <parameter name="bucketName" type="String" required="true"/>
-            <parameter name="quotaLimit" type="Long" required="true"/>
+            <parameter name="bucketId" type="String" required="true">
+                <description>Unique identifier for the bucket (also used as MinIO bucket name)</description>
+            </parameter>
+            <parameter name="userId" type="String" required="true">
+                <description>User who will own the bucket</description>
+            </parameter>
+            <parameter name="bucketName" type="String" required="false">
+                <description>Display name for the bucket (defaults to bucketId if not provided)</description>
+            </parameter>
+            <parameter name="description" type="String" required="false">
+                <description>Optional description for the bucket</description>
+            </parameter>
+            <parameter name="quotaLimit" type="Long" required="false" default-value="5368709120">
+                <description>Quota limit in bytes (default: 5GB)</description>
+            </parameter>
+            <parameter name="isPublic" type="String" required="false" default-value="N">
+                <description>Whether the bucket is publicly accessible (Y/N)</description>
+            </parameter>
+            <parameter name="versioning" type="String" required="false" default-value="N">
+                <description>Whether versioning is enabled (Y/N)</description>
+            </parameter>
+            <parameter name="encryption" type="String" required="false" default-value="N">
+                <description>Whether server-side encryption is enabled (Y/N)</description>
+            </parameter>
+            <parameter name="region" type="String" required="false">
+                <description>MinIO region/zone</description>
+            </parameter>
+            <parameter name="tags" type="String" required="false">
+                <description>JSON formatted tags for the bucket</description>
+            </parameter>
         </in-parameters>
         <out-parameters>
             <parameter name="bucketId" type="String"/>
+            <parameter name="success" type="Boolean"/>
         </out-parameters>
     </service>
-    
-    <service verb="delete" noun="Bucket" type="script" location="component://moqui-minio/script/DeleteBucket.groovy" authenticate="true">
-        <description>Delete a bucket</description>
+
+    <!-- 删除桶 -->
+    <service verb="delete" noun="Bucket" type="java"
+             location="org.moqui.impl.service.runner.MinioServiceRunner"
+             method="deleteBucket"
+             authenticate="true">
+        <description>Delete a bucket via MinioServiceRunner</description>
+        <in-parameters>
+            <parameter name="bucketId" type="String" required="true">
+                <description>Unique identifier for the bucket to delete</description>
+            </parameter>
+            <parameter name="userId" type="String" required="true">
+                <description>User who owns the bucket</description>
+            </parameter>
+        </in-parameters>
+        <out-parameters>
+            <parameter name="success" type="Boolean"/>
+        </out-parameters>
+    </service>
+
+    <!-- 列表桶 -->
+    <service verb="list" noun="Bucket" type="java"
+             location="org.moqui.impl.service.runner.MinioServiceRunner"
+             method="listBucket"
+             authenticate="true">
+        <description>List buckets for a specific user via MinioServiceRunner</description>
+        <in-parameters>
+            <parameter name="userId" type="String" required="true">
+                <description>User whose buckets to list</description>
+            </parameter>
+            <parameter name="status" type="String" required="false">
+                <description>Filter by status (ACTIVE, INACTIVE, ERROR, etc.)</description>
+            </parameter>
+            <parameter name="isPublic" type="String" required="false">
+                <description>Filter by public access (Y/N)</description>
+            </parameter>
+            <parameter name="scope" type="String" required="false">
+                <description>Scope of listing: 'all' for admin view, default for user's buckets</description>
+            </parameter>
+        </in-parameters>
+        <out-parameters>
+            <parameter name="bucketList" type="List">
+                <description>List of bucket information maps</description>
+            </parameter>
+            <parameter name="totalCount" type="Integer">
+                <description>Total number of buckets found</description>
+            </parameter>
+            <parameter name="success" type="Boolean"/>
+        </out-parameters>
+    </service>
+
+    <!-- 更新桶信息 -->
+    <service verb="update" noun="Bucket" type="java"
+             location="org.moqui.impl.service.runner.MinioServiceRunner"
+             method="updateBucket"
+             authenticate="true">
+        <description>Update bucket information</description>
+        <in-parameters>
+            <parameter name="bucketId" type="String" required="true"/>
+            <parameter name="userId" type="String" required="true"/>
+            <parameter name="bucketName" type="String" required="false"/>
+            <parameter name="description" type="String" required="false"/>
+            <parameter name="quotaLimit" type="Long" required="false"/>
+            <parameter name="tags" type="String" required="false"/>
+        </in-parameters>
+        <out-parameters>
+            <parameter name="success" type="Boolean"/>
+        </out-parameters>
+    </service>
+
+    <!-- 获取桶详细信息 -->
+    <service verb="get" noun="Bucket" type="java"
+             location="org.moqui.impl.service.runner.MinioServiceRunner"
+             method="getBucket"
+             authenticate="true">
+        <description>Get detailed bucket information</description>
         <in-parameters>
             <parameter name="bucketId" type="String" required="true"/>
             <parameter name="userId" type="String" required="true"/>
         </in-parameters>
-    </service>
-    
-    <service verb="list" noun="Bucket" type="script" location="component://moqui-minio/script/ListBucket.groovy" authenticate="true">
-        <description>List buckets for a specific user</description>
-        <in-parameters>
-            <parameter name="userId" type="String" required="true"/>
-        </in-parameters>
         <out-parameters>
-            <parameter name="bucketList" type="List"/>
+            <parameter name="bucketInfo" type="Map"/>
+            <parameter name="success" type="Boolean"/>
         </out-parameters>
     </service>
+
 </services>
