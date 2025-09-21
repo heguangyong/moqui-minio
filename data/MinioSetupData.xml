@@ -52,56 +52,56 @@
     <!-- 生鲜店主 -->
     <mantle.party.Party partyId="USER_WANG" partyTypeEnumId="PtyPerson"/>
     <mantle.party.Person partyId="USER_WANG" firstName="王" lastName="师傅"/>
-    <moqui.security.UserAccount userId="USER_WANG" username="wangshifu" password="fresh123" userFullName="王师傅" partyId="USER_WANG"/>
+    <moqui.security.UserAccount userId="USER_WANG" username="wangshifu" currentPassword="16ac58bbfa332c1c55bd98b53e60720bfa90d394" passwordHashType="SHA" userFullName="王师傅" partyId="USER_WANG"/>
     <moqui.security.UserGroupMember userGroupId="FRESH_MERCHANT" userId="USER_WANG" fromDate="2025-09-01 00:00:00"/>
 
     <mantle.party.Party partyId="USER_ZHANG" partyTypeEnumId="PtyPerson"/>
     <mantle.party.Person partyId="USER_ZHANG" firstName="张" lastName="老板"/>
-    <moqui.security.UserAccount userId="USER_ZHANG" username="zhanglaoba" password="meat123" userFullName="张老板" partyId="USER_ZHANG"/>
+    <moqui.security.UserAccount userId="USER_ZHANG" username="zhanglaoba" currentPassword="16ac58bbfa332c1c55bd98b53e60720bfa90d394" passwordHashType="SHA" userFullName="张老板" partyId="USER_ZHANG"/>
     <moqui.security.UserGroupMember userGroupId="FRESH_MERCHANT" userId="USER_ZHANG" fromDate="2025-09-01 00:00:00"/>
 
     <mantle.party.Party partyId="USER_LI" partyTypeEnumId="PtyPerson"/>
     <mantle.party.Person partyId="USER_LI" firstName="李" lastName="大姐"/>
-    <moqui.security.UserAccount userId="USER_LI" username="lidajie" password="fruit123" userFullName="李大姐" partyId="USER_LI"/>
+    <moqui.security.UserAccount userId="USER_LI" username="lidajie" currentPassword="16ac58bbfa332c1c55bd98b53e60720bfa90d394" passwordHashType="SHA" userFullName="李大姐" partyId="USER_LI"/>
     <moqui.security.UserGroupMember userGroupId="FRESH_MERCHANT" userId="USER_LI" fromDate="2025-09-01 00:00:00"/>
 
     <!-- 菜场摊主 -->
     <mantle.party.Party partyId="USER_CHEN" partyTypeEnumId="PtyPerson"/>
     <mantle.party.Person partyId="USER_CHEN" firstName="陈" lastName="阿姨"/>
-    <moqui.security.UserAccount userId="USER_CHEN" username="chenay" password="stall123" userFullName="陈阿姨" partyId="USER_CHEN"/>
+    <moqui.security.UserAccount userId="USER_CHEN" username="chenay" currentPassword="16ac58bbfa332c1c55bd98b53e60720bfa90d394" passwordHashType="SHA" userFullName="陈阿姨" partyId="USER_CHEN"/>
     <moqui.security.UserGroupMember userGroupId="FRESH_MERCHANT" userId="USER_CHEN" fromDate="2025-09-01 00:00:00"/>
 
     <mantle.party.Party partyId="USER_ZHAO" partyTypeEnumId="PtyPerson"/>
     <mantle.party.Person partyId="USER_ZHAO" firstName="赵" lastName="师傅"/>
-    <moqui.security.UserAccount userId="USER_ZHAO" username="zhaoshifu" password="tofu123" userFullName="赵师傅" partyId="USER_ZHAO"/>
+    <moqui.security.UserAccount userId="USER_ZHAO" username="zhaoshifu" currentPassword="16ac58bbfa332c1c55bd98b53e60720bfa90d394" passwordHashType="SHA" userFullName="赵师傅" partyId="USER_ZHAO"/>
     <moqui.security.UserGroupMember userGroupId="FRESH_MERCHANT" userId="USER_ZHAO" fromDate="2025-09-01 00:00:00"/>
 
     <!-- 粮油店主 -->
     <mantle.party.Party partyId="USER_SUN" partyTypeEnumId="PtyPerson"/>
     <mantle.party.Person partyId="USER_SUN" firstName="孙" lastName="老板"/>
-    <moqui.security.UserAccount userId="USER_SUN" username="sunlaoba" password="grain123" userFullName="孙老板" partyId="USER_SUN"/>
+    <moqui.security.UserAccount userId="USER_SUN" username="sunlaoba" currentPassword="16ac58bbfa332c1c55bd98b53e60720bfa90d394" passwordHashType="SHA" userFullName="孙老板" partyId="USER_SUN"/>
     <moqui.security.UserGroupMember userGroupId="FRESH_MERCHANT" userId="USER_SUN" fromDate="2025-09-01 00:00:00"/>
 
     <!-- 便民店主 -->
     <mantle.party.Party partyId="USER_WU" partyTypeEnumId="PtyPerson"/>
     <mantle.party.Person partyId="USER_WU" firstName="吴" lastName="姐"/>
-    <moqui.security.UserAccount userId="USER_WU" username="wujie" password="daily123" userFullName="吴姐" partyId="USER_WU"/>
+    <moqui.security.UserAccount userId="USER_WU" username="wujie" currentPassword="16ac58bbfa332c1c55bd98b53e60720bfa90d394" passwordHashType="SHA" userFullName="吴姐" partyId="USER_WU"/>
     <moqui.security.UserGroupMember userGroupId="FRESH_MERCHANT" userId="USER_WU" fromDate="2025-09-01 00:00:00"/>
 
     <!-- ========== C端消费者账户 ========== -->
     <mantle.party.Party partyId="CONSUMER_001" partyTypeEnumId="PtyPerson"/>
     <mantle.party.Person partyId="CONSUMER_001" firstName="刘" lastName="女士"/>
-    <moqui.security.UserAccount userId="CONSUMER_001" username="liuns" password="consumer123" userFullName="刘女士" partyId="CONSUMER_001"/>
+    <moqui.security.UserAccount userId="CONSUMER_001" username="liuns" currentPassword="16ac58bbfa332c1c55bd98b53e60720bfa90d394" passwordHashType="SHA" userFullName="刘女士" partyId="CONSUMER_001"/>
     <moqui.security.UserGroupMember userGroupId="CONSUMER" userId="CONSUMER_001" fromDate="2025-09-01 00:00:00"/>
 
     <mantle.party.Party partyId="CONSUMER_002" partyTypeEnumId="PtyPerson"/>
     <mantle.party.Person partyId="CONSUMER_002" firstName="周" lastName="先生"/>
-    <moqui.security.UserAccount userId="CONSUMER_002" username="zhouxs" password="consumer123" userFullName="周先生" partyId="CONSUMER_002"/>
+    <moqui.security.UserAccount userId="CONSUMER_002" username="zhouxs" currentPassword="16ac58bbfa332c1c55bd98b53e60720bfa90d394" passwordHashType="SHA" userFullName="周先生" partyId="CONSUMER_002"/>
     <moqui.security.UserGroupMember userGroupId="CONSUMER" userId="CONSUMER_002" fromDate="2025-09-01 00:00:00"/>
 
     <mantle.party.Party partyId="CONSUMER_003" partyTypeEnumId="PtyPerson"/>
     <mantle.party.Person partyId="CONSUMER_003" firstName="徐" lastName="大妈"/>
-    <moqui.security.UserAccount userId="CONSUMER_003" username="xudama" password="consumer123" userFullName="徐大妈" partyId="CONSUMER_003"/>
+    <moqui.security.UserAccount userId="CONSUMER_003" username="xudama" currentPassword="16ac58bbfa332c1c55bd98b53e60720bfa90d394" passwordHashType="SHA" userFullName="徐大妈" partyId="CONSUMER_003"/>
     <moqui.security.UserGroupMember userGroupId="CONSUMER" userId="CONSUMER_003" fromDate="2025-09-01 00:00:00"/>
 
     <!-- ========== 商户存储桶配置 ========== -->

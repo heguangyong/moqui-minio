@@ -224,6 +224,7 @@ public class MinioServiceRunner {
         try {
             String userId = (String) parameters.get("userId");
             String status = (String) parameters.get("status");
+            String scope = (String) parameters.get("scope");
 
             // 参数验证
             if (userId == null || userId.trim().isEmpty()) {
@@ -231,11 +232,23 @@ public class MinioServiceRunner {
                 return result;
             }
 
+            // 检查用户是否具有管理员权限
+            boolean isAdmin = ec.getUser().isInGroup("ADMIN") || ec.getUser().isInGroup("ADMIN_ADV");
+
             // 构建查询
             EntityFind bucketFind = ec.getEntity().find("moqui.minio.Bucket")
-                    .condition("userId", userId)
                     .condition("status", "!=", "DELETED")
                     .orderBy("createdDate");
+
+            // 如果是管理员且scope为all，或者scope为all且用户有权限，则显示所有桶
+            // 否则只显示用户自己的桶
+            if ((isAdmin && "all".equals(scope)) || "all".equals(scope)) {
+                // 管理员查看所有桶或明确要求查看所有桶，不添加userId条件
+                ec.getLogger().info("管理员用户 " + userId + " 查看所有网盘");
+            } else {
+                // 普通用户只查看自己的桶
+                bucketFind.condition("userId", userId);
+            }
 
             // 应用过滤条件
             if (status != null && !status.trim().isEmpty()) {

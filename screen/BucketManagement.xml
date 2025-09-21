@@ -6,10 +6,18 @@
         default-menu-include="true"
         require-authentication="false">
 
-    <!-- 调试用，关闭权限 -->
     <actions>
         <set field="userId" from="ec.user.userId"/>
-        <service-call name="minio.MinioServices.list#Bucket" in-map="[userId:userId]" out-map="context"/>
+        <set field="isAdmin" from="ec.user.isInGroup('ADMIN') || ec.user.isInGroup('ADMIN_ADV')"/>
+        <set field="scope" from="scope ?: 'user'"/>
+        <script><![CDATA[
+            // 构建服务调用参数
+            Map serviceParams = [userId: userId]
+            if (isAdmin && scope == 'all') {
+                serviceParams.scope = 'all'
+            }
+            ec.service.sync().name("minio.MinioServices.list#Bucket").parameters(serviceParams).call()
+        ]]></script>
     </actions>
 
     <widgets>
@@ -29,6 +37,17 @@
                         <field name="submitButton"><default-field title="Save"><submit/></default-field></field>
                     </form-single>
                 </container-dialog>
+
+                <!-- 管理员查看选项 -->
+                <section name="adminView" condition="isAdmin">
+                    <widgets>
+                        <container>
+                            <link url="." text="查看我的网盘" parameter-map="[scope:'user']" condition="scope == 'all'"/>
+                            <label text=" | " condition="scope == 'all'"/>
+                            <link url="." text="查看所有网盘" parameter-map="[scope:'all']" condition="scope != 'all'"/>
+                        </container>
+                    </widgets>
+                </section>
             </box-toolbar>
 
             <!-- 桶列表 -->
