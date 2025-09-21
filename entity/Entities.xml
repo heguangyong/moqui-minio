@@ -87,16 +87,6 @@ along with this software (see the LICENSE.md file). If not, see
             <index-field name="createdDate"/>
         </index>
 
-        <seed-data>
-            <moqui.minio.Bucket bucketId="default-bucket" userId="USER001" bucketName="默认存储桶"
-                                quotaLimit="5368709120" status="ACTIVE" isPublic="N"
-                                versioning="N" encryption="N" createdDate="2025-09-15 00:00:00"
-                                createdByUserId="USER001"/>
-            <moqui.minio.Bucket bucketId="public-assets" userId="SYSTEM" bucketName="公共资源"
-                                quotaLimit="10737418240" status="ACTIVE" isPublic="Y"
-                                versioning="Y" encryption="Y" createdDate="2025-09-15 00:00:00"
-                                createdByUserId="SYSTEM"/>
-        </seed-data>
     </entity>
 
     <!-- Bucket 权限表 -->

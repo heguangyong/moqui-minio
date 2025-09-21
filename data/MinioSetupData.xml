@@ -1,0 +1,237 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+社区生鲜供需匹配平台业务数据
+核心场景：生鲜商户与C端客户的智能供需匹配
+商户类型：单门独户生鲜店、社区菜场摊位、米面粮油店、日用品小店
+-->
+<entity-facade-xml type="seed">
+
+    <!-- ========== 系统基础用户 ========== -->
+    <moqui.security.UserAccount userId="SYSTEM" username="system" userFullName="System User"/>
+    <moqui.security.UserAccount userId="PLATFORM_ADMIN" username="platform_admin" userFullName="Platform Administrator"/>
+
+    <!-- ========== 用户组定义 ========== -->
+    <moqui.security.UserGroup userGroupId="FRESH_MERCHANT" description="生鲜商户用户组"/>
+    <moqui.security.UserGroup userGroupId="CONSUMER" description="C端消费者用户组"/>
+    <moqui.security.UserGroup userGroupId="PLATFORM_OPS" description="平台运营用户组"/>
+
+    <!-- ========== 生鲜商户组织 ========== -->
+    <!-- 单门独户生鲜店 -->
+    <mantle.party.Party partyId="MERCHANT_FRESH_001" partyTypeEnumId="PtyOrganization"/>
+    <mantle.party.Organization partyId="MERCHANT_FRESH_001" organizationName="老王蔬菜店"/>
+    <mantle.party.PartyRole partyId="MERCHANT_FRESH_001" roleTypeId="Vendor"/>
+
+    <mantle.party.Party partyId="MERCHANT_FRESH_002" partyTypeEnumId="PtyOrganization"/>
+    <mantle.party.Organization partyId="MERCHANT_FRESH_002" organizationName="鲜肉铺子"/>
+    <mantle.party.PartyRole partyId="MERCHANT_FRESH_002" roleTypeId="Vendor"/>
+
+    <mantle.party.Party partyId="MERCHANT_FRESH_003" partyTypeEnumId="PtyOrganization"/>
+    <mantle.party.Organization partyId="MERCHANT_FRESH_003" organizationName="时令水果店"/>
+    <mantle.party.PartyRole partyId="MERCHANT_FRESH_003" roleTypeId="Vendor"/>
+
+    <!-- 社区菜场摊位 -->
+    <mantle.party.Party partyId="MERCHANT_STALL_001" partyTypeEnumId="PtyOrganization"/>
+    <mantle.party.Organization partyId="MERCHANT_STALL_001" organizationName="东门菜场3号摊位"/>
+    <mantle.party.PartyRole partyId="MERCHANT_STALL_001" roleTypeId="Vendor"/>
+
+    <mantle.party.Party partyId="MERCHANT_STALL_002" partyTypeEnumId="PtyOrganization"/>
+    <mantle.party.Organization partyId="MERCHANT_STALL_002" organizationName="南门菜场豆制品摊"/>
+    <mantle.party.PartyRole partyId="MERCHANT_STALL_002" roleTypeId="Vendor"/>
+
+    <!-- 米面粮油店 -->
+    <mantle.party.Party partyId="MERCHANT_GRAIN_001" partyTypeEnumId="PtyOrganization"/>
+    <mantle.party.Organization partyId="MERCHANT_GRAIN_001" organizationName="康盛粮油店"/>
+    <mantle.party.PartyRole partyId="MERCHANT_GRAIN_001" roleTypeId="Vendor"/>
+
+    <!-- 日用品小店 -->
+    <mantle.party.Party partyId="MERCHANT_DAILY_001" partyTypeEnumId="PtyOrganization"/>
+    <mantle.party.Organization partyId="MERCHANT_DAILY_001" organizationName="便民日用品店"/>
+    <mantle.party.PartyRole partyId="MERCHANT_DAILY_001" roleTypeId="Vendor"/>
+
+    <!-- ========== 商户用户账户 ========== -->
+    <!-- 生鲜店主 -->
+    <mantle.party.Party partyId="USER_WANG" partyTypeEnumId="PtyPerson"/>
+    <mantle.party.Person partyId="USER_WANG" firstName="王" lastName="师傅"/>
+    <moqui.security.UserAccount userId="USER_WANG" username="wangshifu" password="fresh123" userFullName="王师傅" partyId="USER_WANG"/>
+    <moqui.security.UserGroupMember userGroupId="FRESH_MERCHANT" userId="USER_WANG" fromDate="2025-09-01 00:00:00"/>
+
+    <mantle.party.Party partyId="USER_ZHANG" partyTypeEnumId="PtyPerson"/>
+    <mantle.party.Person partyId="USER_ZHANG" firstName="张" lastName="老板"/>
+    <moqui.security.UserAccount userId="USER_ZHANG" username="zhanglaoba" password="meat123" userFullName="张老板" partyId="USER_ZHANG"/>
+    <moqui.security.UserGroupMember userGroupId="FRESH_MERCHANT" userId="USER_ZHANG" fromDate="2025-09-01 00:00:00"/>
+
+    <mantle.party.Party partyId="USER_LI" partyTypeEnumId="PtyPerson"/>
+    <mantle.party.Person partyId="USER_LI" firstName="李" lastName="大姐"/>
+    <moqui.security.UserAccount userId="USER_LI" username="lidajie" password="fruit123" userFullName="李大姐" partyId="USER_LI"/>
+    <moqui.security.UserGroupMember userGroupId="FRESH_MERCHANT" userId="USER_LI" fromDate="2025-09-01 00:00:00"/>
+
+    <!-- 菜场摊主 -->
+    <mantle.party.Party partyId="USER_CHEN" partyTypeEnumId="PtyPerson"/>
+    <mantle.party.Person partyId="USER_CHEN" firstName="陈" lastName="阿姨"/>
+    <moqui.security.UserAccount userId="USER_CHEN" username="chenay" password="stall123" userFullName="陈阿姨" partyId="USER_CHEN"/>
+    <moqui.security.UserGroupMember userGroupId="FRESH_MERCHANT" userId="USER_CHEN" fromDate="2025-09-01 00:00:00"/>
+
+    <mantle.party.Party partyId="USER_ZHAO" partyTypeEnumId="PtyPerson"/>
+    <mantle.party.Person partyId="USER_ZHAO" firstName="赵" lastName="师傅"/>
+    <moqui.security.UserAccount userId="USER_ZHAO" username="zhaoshifu" password="tofu123" userFullName="赵师傅" partyId="USER_ZHAO"/>
+    <moqui.security.UserGroupMember userGroupId="FRESH_MERCHANT" userId="USER_ZHAO" fromDate="2025-09-01 00:00:00"/>
+
+    <!-- 粮油店主 -->
+    <mantle.party.Party partyId="USER_SUN" partyTypeEnumId="PtyPerson"/>
+    <mantle.party.Person partyId="USER_SUN" firstName="孙" lastName="老板"/>
+    <moqui.security.UserAccount userId="USER_SUN" username="sunlaoba" password="grain123" userFullName="孙老板" partyId="USER_SUN"/>
+    <moqui.security.UserGroupMember userGroupId="FRESH_MERCHANT" userId="USER_SUN" fromDate="2025-09-01 00:00:00"/>
+
+    <!-- 便民店主 -->
+    <mantle.party.Party partyId="USER_WU" partyTypeEnumId="PtyPerson"/>
+    <mantle.party.Person partyId="USER_WU" firstName="吴" lastName="姐"/>
+    <moqui.security.UserAccount userId="USER_WU" username="wujie" password="daily123" userFullName="吴姐" partyId="USER_WU"/>
+    <moqui.security.UserGroupMember userGroupId="FRESH_MERCHANT" userId="USER_WU" fromDate="2025-09-01 00:00:00"/>
+
+    <!-- ========== C端消费者账户 ========== -->
+    <mantle.party.Party partyId="CONSUMER_001" partyTypeEnumId="PtyPerson"/>
+    <mantle.party.Person partyId="CONSUMER_001" firstName="刘" lastName="女士"/>
+    <moqui.security.UserAccount userId="CONSUMER_001" username="liuns" password="consumer123" userFullName="刘女士" partyId="CONSUMER_001"/>
+    <moqui.security.UserGroupMember userGroupId="CONSUMER" userId="CONSUMER_001" fromDate="2025-09-01 00:00:00"/>
+
+    <mantle.party.Party partyId="CONSUMER_002" partyTypeEnumId="PtyPerson"/>
+    <mantle.party.Person partyId="CONSUMER_002" firstName="周" lastName="先生"/>
+    <moqui.security.UserAccount userId="CONSUMER_002" username="zhouxs" password="consumer123" userFullName="周先生" partyId="CONSUMER_002"/>
+    <moqui.security.UserGroupMember userGroupId="CONSUMER" userId="CONSUMER_002" fromDate="2025-09-01 00:00:00"/>
+
+    <mantle.party.Party partyId="CONSUMER_003" partyTypeEnumId="PtyPerson"/>
+    <mantle.party.Person partyId="CONSUMER_003" firstName="徐" lastName="大妈"/>
+    <moqui.security.UserAccount userId="CONSUMER_003" username="xudama" password="consumer123" userFullName="徐大妈" partyId="CONSUMER_003"/>
+    <moqui.security.UserGroupMember userGroupId="CONSUMER" userId="CONSUMER_003" fromDate="2025-09-01 00:00:00"/>
+
+    <!-- ========== 商户存储桶配置 ========== -->
+    <!-- 系统公共资源桶 -->
+    <moqui.minio.Bucket bucketId="system-resources" userId="SYSTEM" bucketName="系统资源"
+                        description="平台默认图片、图标、模板等"
+                        quotaLimit="5368709120" usedStorage="0" status="ACTIVE"
+                        isPublic="Y" versioning="N" encryption="N"
+                        createdDate="2025-09-01 00:00:00" createdByUserId="SYSTEM"/>
+
+    <!-- 生鲜商户存储桶 - 商品图片、证照等 -->
+    <moqui.minio.Bucket bucketId="fresh-vegetables" userId="USER_WANG" bucketName="老王蔬菜店资料"
+                        description="蔬菜商品图片、营业执照、食品安全证等"
+                        quotaLimit="2147483648" usedStorage="52428800" status="ACTIVE"
+                        isPublic="N" versioning="N" encryption="N"
+                        createdDate="2025-09-01 00:00:00" createdByUserId="USER_WANG"/>
+
+    <moqui.minio.Bucket bucketId="fresh-meat" userId="USER_ZHANG" bucketName="鲜肉铺子资料"
+                        description="肉类商品图片、屠宰证、卫生许可证等"
+                        quotaLimit="2147483648" usedStorage="83886080" status="ACTIVE"
+                        isPublic="N" versioning="N" encryption="N"
+                        createdDate="2025-09-01 00:00:00" createdByUserId="USER_ZHANG"/>
+
+    <moqui.minio.Bucket bucketId="fresh-fruits" userId="USER_LI" bucketName="时令水果店资料"
+                        description="水果商品图片、进货凭证、检疫证明等"
+                        quotaLimit="2147483648" usedStorage="67108864" status="ACTIVE"
+                        isPublic="N" versioning="N" encryption="N"
+                        createdDate="2025-09-01 00:00:00" createdByUserId="USER_LI"/>
+
+    <!-- 菜场摊位存储桶 -->
+    <moqui.minio.Bucket bucketId="stall-vegetables" userId="USER_CHEN" bucketName="东门菜场3号摊位"
+                        description="摊位商品图片、摊位证、每日进货单等"
+                        quotaLimit="1073741824" usedStorage="31457280" status="ACTIVE"
+                        isPublic="N" versioning="N" encryption="N"
+                        createdDate="2025-09-01 00:00:00" createdByUserId="USER_CHEN"/>
+
+    <moqui.minio.Bucket bucketId="stall-tofu" userId="USER_ZHAO" bucketName="南门菜场豆制品摊"
+                        description="豆制品图片、制作许可证、原料证明等"
+                        quotaLimit="1073741824" usedStorage="25165824" status="ACTIVE"
+                        isPublic="N" versioning="N" encryption="N"
+                        createdDate="2025-09-01 00:00:00" createdByUserId="USER_ZHAO"/>
+
+    <!-- 粮油店存储桶 -->
+    <moqui.minio.Bucket bucketId="grain-oil-store" userId="USER_SUN" bucketName="康盛粮油店资料"
+                        description="粮油商品图片、品牌授权、质量检测报告等"
+                        quotaLimit="2147483648" usedStorage="41943040" status="ACTIVE"
+                        isPublic="N" versioning="N" encryption="N"
+                        createdDate="2025-09-01 00:00:00" createdByUserId="USER_SUN"/>
+
+    <!-- 日用品店存储桶 -->
+    <moqui.minio.Bucket bucketId="daily-goods-store" userId="USER_WU" bucketName="便民日用品店资料"
+                        description="日用品图片、供应商资料、商品清单等"
+                        quotaLimit="1073741824" usedStorage="20971520" status="ACTIVE"
+                        isPublic="N" versioning="N" encryption="N"
+                        createdDate="2025-09-01 00:00:00" createdByUserId="USER_WU"/>
+
+    <!-- ========== 存储桶权限配置 ========== -->
+    <!-- 商户拥有各自存储桶的管理权限 -->
+    <moqui.minio.BucketPermission bucketId="fresh-vegetables" userId="USER_WANG" permissionType="ADMIN"
+                                  grantedDate="2025-09-01 00:00:00" grantedByUserId="SYSTEM"/>
+    <moqui.minio.BucketPermission bucketId="fresh-meat" userId="USER_ZHANG" permissionType="ADMIN"
+                                  grantedDate="2025-09-01 00:00:00" grantedByUserId="SYSTEM"/>
+    <moqui.minio.BucketPermission bucketId="fresh-fruits" userId="USER_LI" permissionType="ADMIN"
+                                  grantedDate="2025-09-01 00:00:00" grantedByUserId="SYSTEM"/>
+    <moqui.minio.BucketPermission bucketId="stall-vegetables" userId="USER_CHEN" permissionType="ADMIN"
+                                  grantedDate="2025-09-01 00:00:00" grantedByUserId="SYSTEM"/>
+    <moqui.minio.BucketPermission bucketId="stall-tofu" userId="USER_ZHAO" permissionType="ADMIN"
+                                  grantedDate="2025-09-01 00:00:00" grantedByUserId="SYSTEM"/>
+    <moqui.minio.BucketPermission bucketId="grain-oil-store" userId="USER_SUN" permissionType="ADMIN"
+                                  grantedDate="2025-09-01 00:00:00" grantedByUserId="SYSTEM"/>
+    <moqui.minio.BucketPermission bucketId="daily-goods-store" userId="USER_WU" permissionType="ADMIN"
+                                  grantedDate="2025-09-01 00:00:00" grantedByUserId="SYSTEM"/>
+
+    <!-- 平台管理员对所有桶的管理权限 -->
+    <moqui.minio.BucketPermission bucketId="system-resources" userId="PLATFORM_ADMIN" permissionType="ADMIN"
+                                  grantedDate="2025-09-01 00:00:00" grantedByUserId="SYSTEM"/>
+
+    <!-- ========== 存储桶配置参数 ========== -->
+    <!-- 生鲜商品图片配置 - 文件类型限制 -->
+    <moqui.minio.BucketConfig bucketId="fresh-vegetables" configKey="allowed_file_types"
+                              configValue="[&quot;jpg&quot;,&quot;jpeg&quot;,&quot;png&quot;,&quot;gif&quot;,&quot;pdf&quot;]"
+                              configType="JSON" description="允许上传的文件类型：图片和证照PDF"
+                              lastModifiedDate="2025-09-01 00:00:00" modifiedByUserId="SYSTEM"/>
+
+    <moqui.minio.BucketConfig bucketId="fresh-meat" configKey="allowed_file_types"
+                              configValue="[&quot;jpg&quot;,&quot;jpeg&quot;,&quot;png&quot;,&quot;pdf&quot;]"
+                              configType="JSON" description="允许上传的文件类型：图片和证照PDF"
+                              lastModifiedDate="2025-09-01 00:00:00" modifiedByUserId="SYSTEM"/>
+
+    <!-- 单文件大小限制 - 生鲜类图片通常较大 -->
+    <moqui.minio.BucketConfig bucketId="fresh-fruits" configKey="max_file_size" configValue="10485760"
+                              configType="NUMBER" description="单文件最大大小（10MB）"
+                              lastModifiedDate="2025-09-01 00:00:00" modifiedByUserId="SYSTEM"/>
+
+    <!-- 摊位配置 - 较小存储空间和文件大小 -->
+    <moqui.minio.BucketConfig bucketId="stall-vegetables" configKey="max_file_size" configValue="5242880"
+                              configType="NUMBER" description="单文件最大大小（5MB）"
+                              lastModifiedDate="2025-09-01 00:00:00" modifiedByUserId="SYSTEM"/>
+
+    <!-- 图片压缩配置 -->
+    <moqui.minio.BucketConfig bucketId="fresh-vegetables" configKey="auto_compress_images" configValue="true"
+                              configType="BOOLEAN" description="自动压缩上传的图片"
+                              lastModifiedDate="2025-09-01 00:00:00" modifiedByUserId="SYSTEM"/>
+
+    <!-- ========== 业务使用日志示例 ========== -->
+    <!-- 商户上传商品图片 -->
+    <moqui.minio.BucketUsageLog logId="LOG-FRESH-001" bucketId="fresh-vegetables" userId="USER_WANG"
+                                operation="UPLOAD" objectName="products/cabbage-fresh-202509.jpg" objectSize="1572864"
+                                operationDate="2025-09-20 07:30:00" resultStatus="SUCCESS"/>
+
+    <moqui.minio.BucketUsageLog logId="LOG-FRESH-002" bucketId="fresh-meat" userId="USER_ZHANG"
+                                operation="UPLOAD" objectName="products/pork-ribs-premium.jpg" objectSize="2097152"
+                                operationDate="2025-09-20 08:15:00" resultStatus="SUCCESS"/>
+
+    <moqui.minio.BucketUsageLog logId="LOG-FRESH-003" bucketId="fresh-fruits" userId="USER_LI"
+                                operation="UPLOAD" objectName="products/apple-seasonal-batch.jpg" objectSize="1835008"
+                                operationDate="2025-09-20 09:00:00" resultStatus="SUCCESS"/>
+
+    <!-- 摊主上传每日商品 -->
+    <moqui.minio.BucketUsageLog logId="LOG-STALL-001" bucketId="stall-vegetables" userId="USER_CHEN"
+                                operation="UPLOAD" objectName="daily/tomato-local-20250920.jpg" objectSize="786432"
+                                operationDate="2025-09-20 06:45:00" resultStatus="SUCCESS"/>
+
+    <moqui.minio.BucketUsageLog logId="LOG-STALL-002" bucketId="stall-tofu" userId="USER_ZHAO"
+                                operation="UPLOAD" objectName="daily/fresh-tofu-morning.jpg" objectSize="524288"
+                                operationDate="2025-09-20 05:30:00" resultStatus="SUCCESS"/>
+
+    <!-- 证照文件上传 -->
+    <moqui.minio.BucketUsageLog logId="LOG-CERT-001" bucketId="grain-oil-store" userId="USER_SUN"
+                                operation="UPLOAD" objectName="certificates/food-safety-cert-2025.pdf" objectSize="2621440"
+                                operationDate="2025-09-15 14:20:00" resultStatus="SUCCESS"/>
+
+</entity-facade-xml>
