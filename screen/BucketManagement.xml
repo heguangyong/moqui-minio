@@ -15,12 +15,8 @@
         <default-response url="."/>
     </transition>
     <transition name="deleteBucket">
-        <actions>
-            <log level="info" message="deleteBucket transition 被调用, bucketId=${bucketId}, userId=${userId}"/>
-            <service-call name="minio.MinioServices.delete#Bucket"/>
-        </actions>
+        <service-call name="minio.MinioServices.delete#Bucket"/>
         <default-response url="."/>
-        <error-response url="."/>
     </transition>
 
     <actions>
@@ -110,8 +106,7 @@
                     <field name="actions">
                         <header-field title="Actions"/>
                         <default-field>
-                            <container>
-                                <link url="deleteBucket" text="Delete" link-type="anchor" confirmation="确定要删除这个网盘吗？删除后将无法恢复。">
+                            <link url="deleteBucket" text="Delete" confirmation="确定要删除这个网盘吗？删除后将无法恢复。">
                                     <parameter name="bucketId" from="bucketId"/>
                                     <parameter name="userId" from="userId"/>
                                 </link>
@@ -126,7 +121,6 @@
                                         <field name="submitButton"><default-field title="Update"><submit/></default-field></field>
                                     </form-single>
                                 </container-dialog>
-                            </container>
                         </default-field>
                     </field>
                 </form-list>

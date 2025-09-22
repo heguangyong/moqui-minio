@@ -159,13 +159,20 @@ public class MinioServiceRunner {
             // 从数据库查询 bucket 信息
             EntityValue bucketRecord = ec.getEntity().find("moqui.minio.Bucket")
                     .condition("bucketId", bucketId)
-                    .condition("userId", userId)
                     .one();
 
             if (bucketRecord == null) {
-                String errorMsg = "未找到 bucketId=" + bucketId + " 的 bucket 或无权限访问";
-                ec.getMessage().addError(errorMsg);
-                ec.getLogger().warn(errorMsg);
+                ec.getMessage().addError("未找到 bucketId=" + bucketId + " 的 bucket");
+                return result;
+            }
+
+            // 检查权限：要么是桶的所有者，要么是管理员
+            String bucketOwnerId = bucketRecord.getString("userId");
+            boolean isOwner = userId.equals(bucketOwnerId);
+            boolean isAdmin = ec.getUser().isInGroup("ADMIN") || ec.getUser().isInGroup("ADMIN_ADV");
+
+            if (!isOwner && !isAdmin) {
+                ec.getMessage().addError("没有权限删除此bucket");
                 return result;
             }
 
