@@ -15,7 +15,7 @@
     <screen-facade>
         <screen location="component://webroot/screen/webroot/apps.xml">
             <subscreens-item name="minio" menu-title="Minio" menu-index="10"
-                             location="component://moqui-minio/screen/App.xml"/>
+                             location="component://moqui-minio/screen/MinioApp.xml"/>
         </screen>
     </screen-facade>
 </moqui-conf>
