@@ -89,7 +89,9 @@
                 <form-list name="ListBuckets" list="bucketList" paginate="true" skip-form="true">
                     <field name="bucketId">
                         <header-field title="${ec.l10n.localize('Bucket ID')}"/>
-                        <default-field><display/></default-field>
+                        <default-field>
+                            <link text="${bucketId}" url="../Bucket/FileExplorer" parameter-map="[bucketName:bucketName]"/>
+                        </default-field>
                     </field>
                     <field name="bucketName">
                         <header-field title="${ec.l10n.localize('Bucket Name')}"/>
@@ -109,7 +111,6 @@
                             <link url="deleteBucket" text="${ec.l10n.localize('Delete')}" confirmation="确定要删除这个网盘吗？删除后将无法恢复。">
                                     <parameter name="bucketId" from="bucketId"/>
                                 </link>
-                                <label text=" | "/>
                                 <container-dialog id="EditBucketDialog" button-text="${ec.l10n.localize('Edit')}">
                                     <form-single name="EditBucketForm" transition="updateBucket">
                                         <field name="bucketId"><default-field><hidden/></default-field></field>
