@@ -13,10 +13,11 @@
         <script><![CDATA[
             // 构建服务调用参数
             Map serviceParams = [userId: userId]
-            if (isAdmin && scope == 'all') {
+            if (scope == 'all') {
                 serviceParams.scope = 'all'
             }
-            ec.service.sync().name("minio.MinioServices.list#Bucket").parameters(serviceParams).call()
+            Map result = ec.service.sync().name("minio.MinioServices.list#Bucket").parameters(serviceParams).call()
+            bucketList = result.bucketList
         ]]></script>
     </actions>
 
@@ -43,7 +44,6 @@
                     <widgets>
                         <container>
                             <link url="." text="查看我的网盘" parameter-map="[scope:'user']" condition="scope == 'all'"/>
-                            <label text=" | " condition="scope == 'all'"/>
                             <link url="." text="查看所有网盘" parameter-map="[scope:'all']" condition="scope != 'all'"/>
                         </container>
                     </widgets>

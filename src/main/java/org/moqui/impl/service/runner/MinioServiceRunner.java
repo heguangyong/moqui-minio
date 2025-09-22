@@ -1,13 +1,14 @@
 package org.moqui.impl.service.runner;
 
-import io.minio.MinioClient;
-import io.minio.MakeBucketArgs;
-import io.minio.RemoveBucketArgs;
-import io.minio.BucketExistsArgs;
+import io.minio.*;
+import io.minio.http.Method;
+import io.minio.messages.Item;
 import org.moqui.context.ExecutionContext;
 import org.moqui.entity.EntityValue;
 import org.moqui.entity.EntityList;
 import org.moqui.entity.EntityFind;
+
+import java.io.ByteArrayInputStream;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
@@ -217,6 +218,138 @@ public class MinioServiceRunner {
         return result;
     }
 
+    public static Map<String, Object> updateBucket(ExecutionContext ec) {
+        Map<String, Object> result = new HashMap<>();
+        Map<String, Object> parameters = ec.getContext();
+
+        try {
+            String bucketId = (String) parameters.get("bucketId");
+            String userId = (String) parameters.get("userId");
+
+            if (bucketId == null || bucketId.trim().isEmpty()) {
+                ec.getMessage().addError("bucketId 不能为空");
+                return result;
+            }
+            if (userId == null || userId.trim().isEmpty()) {
+                ec.getMessage().addError("userId 不能为空");
+                return result;
+            }
+
+            // 查找数据库中的 bucket
+            EntityValue bucketRecord = ec.getEntity().find("moqui.minio.Bucket")
+                    .condition("bucketId", bucketId)
+                    .condition("userId", userId)
+                    .one();
+            if (bucketRecord == null) {
+                ec.getMessage().addError("未找到 bucketId=" + bucketId + " 的 bucket 或无权限访问");
+                return result;
+            }
+
+            // 更新允许的字段
+            if (parameters.get("bucketName") != null)
+                bucketRecord.set("bucketName", parameters.get("bucketName"));
+            if (parameters.get("description") != null)
+                bucketRecord.set("description", parameters.get("description"));
+            if (parameters.get("quotaLimit") != null)
+                bucketRecord.set("quotaLimit", parameters.get("quotaLimit"));
+            if (parameters.get("tags") != null)
+                bucketRecord.set("tags", parameters.get("tags"));
+
+            bucketRecord.set("lastModifiedDate", new Timestamp(System.currentTimeMillis()));
+            bucketRecord.update();
+
+            // 暂不直接修改 MinIO bucket 属性（MinIO API 不支持 quota/tag 原生管理）
+            logBucketOperation(ec, bucketId, userId, "UPDATE", null, 0L, "SUCCESS", null);
+
+            result.put("success", true);
+        } catch (Exception e) {
+            logBucketOperation(ec, (String) parameters.get("bucketId"), (String) parameters.get("userId"),
+                    "UPDATE", null, 0L, "FAILURE", e.getMessage());
+            ec.getMessage().addError("更新 bucket 失败: " + e.getMessage());
+            result.put("success", false);
+            ec.getLogger().error("Failed to update MinIO bucket", e);
+        }
+        return result;
+    }
+
+    public static Map<String, Object> getBucket(ExecutionContext ec) {
+        Map<String, Object> result = new HashMap<>();
+        Map<String, Object> parameters = ec.getContext();
+
+        try {
+            String bucketId = (String) parameters.get("bucketId");
+            String userId = (String) parameters.get("userId");
+
+            if (bucketId == null || bucketId.trim().isEmpty()) {
+                ec.getMessage().addError("bucketId 不能为空");
+                return result;
+            }
+            if (userId == null || userId.trim().isEmpty()) {
+                ec.getMessage().addError("userId 不能为空");
+                return result;
+            }
+
+            // 查找数据库中的 bucket
+            EntityValue bucketRecord = ec.getEntity().find("moqui.minio.Bucket")
+                    .condition("bucketId", bucketId)
+                    .condition("userId", userId)
+                    .one();
+            if (bucketRecord == null) {
+                ec.getMessage().addError("未找到 bucketId=" + bucketId + " 的 bucket 或无权限访问");
+                return result;
+            }
+
+            Map<String, Object> bucketInfo = new HashMap<>();
+            bucketInfo.put("bucketId", bucketRecord.getString("bucketId"));
+            bucketInfo.put("userId", bucketRecord.getString("userId"));
+            bucketInfo.put("bucketName", bucketRecord.getString("bucketName"));
+            bucketInfo.put("description", bucketRecord.getString("description"));
+            bucketInfo.put("quotaLimit", bucketRecord.getLong("quotaLimit"));
+            bucketInfo.put("usedStorage", bucketRecord.getLong("usedStorage"));
+            bucketInfo.put("status", bucketRecord.getString("status"));
+            bucketInfo.put("isPublic", bucketRecord.getString("isPublic"));
+            bucketInfo.put("versioning", bucketRecord.getString("versioning"));
+            bucketInfo.put("encryption", bucketRecord.getString("encryption"));
+            bucketInfo.put("createdDate", bucketRecord.getTimestamp("createdDate"));
+            bucketInfo.put("lastModifiedDate", bucketRecord.getTimestamp("lastModifiedDate"));
+            bucketInfo.put("tags", bucketRecord.getString("tags"));
+
+            // 检查 MinIO 中的实际状态
+            boolean existsInMinio = false;
+            try {
+                MinioClient minioClient = createMinioClient();
+                existsInMinio = minioClient.bucketExists(
+                        BucketExistsArgs.builder().bucket(bucketId).build()
+                );
+            } catch (Exception e) {
+                ec.getLogger().warn("检查 MinIO bucket 状态失败: " + bucketId, e);
+            }
+            bucketInfo.put("existsInMinio", existsInMinio);
+
+            // 如果 MinIO 已删除但数据库是 ACTIVE，更新为 ERROR
+            if (!existsInMinio && "ACTIVE".equals(bucketRecord.getString("status"))) {
+                bucketRecord.set("status", "ERROR");
+                bucketRecord.set("lastModifiedDate", new Timestamp(System.currentTimeMillis()));
+                bucketRecord.update();
+                bucketInfo.put("status", "ERROR");
+            }
+
+            logBucketOperation(ec, bucketId, userId, "GET", null, 0L, "SUCCESS", null);
+
+            result.put("bucketInfo", bucketInfo);
+            result.put("success", true);
+        } catch (Exception e) {
+            logBucketOperation(ec, (String) parameters.get("bucketId"), (String) parameters.get("userId"),
+                    "GET", null, 0L, "FAILURE", e.getMessage());
+            ec.getMessage().addError("获取 bucket 失败: " + e.getMessage());
+            result.put("success", false);
+            ec.getLogger().error("Failed to get MinIO bucket", e);
+        }
+
+        return result;
+    }
+
+
     public static Map<String, Object> listBucket(ExecutionContext ec) {
         Map<String, Object> result = new HashMap<>();
         Map<String, Object> parameters = ec.getContext();
@@ -331,6 +464,173 @@ public class MinioServiceRunner {
 
         return result;
     }
+
+    public static Map<String, Object> uploadObject(ExecutionContext ec) {
+        Map<String, Object> result = new HashMap<>();
+        Map<String, Object> parameters = ec.getContext();
+
+        String bucketId = (String) parameters.get("bucketId");
+        String userId = (String) parameters.get("userId");
+        String objectName = (String) parameters.get("objectName");
+        byte[] fileBytes = (byte[]) parameters.get("fileBytes"); // Moqui 传输的文件内容
+
+        try {
+            MinioClient client = createMinioClient();
+
+            // 检查桶存在
+            if (!client.bucketExists(BucketExistsArgs.builder().bucket(bucketId).build())) {
+                ec.getMessage().addError("Bucket 不存在: " + bucketId);
+                return result;
+            }
+
+            // 上传文件
+            client.putObject(
+                    PutObjectArgs.builder()
+                            .bucket(bucketId)
+                            .object(objectName)
+                            .stream(new ByteArrayInputStream(fileBytes), fileBytes.length, -1)
+                            .build()
+            );
+
+            long fileSize = fileBytes.length;
+
+            // 更新数据库 usedStorage
+            EntityValue bucketRecord = ec.getEntity().find("moqui.minio.Bucket")
+                    .condition("bucketId", bucketId).one();
+            if (bucketRecord != null) {
+                long usedStorage = bucketRecord.getLong("usedStorage") != null ? bucketRecord.getLong("usedStorage") : 0L;
+                bucketRecord.set("usedStorage", usedStorage + fileSize);
+                bucketRecord.set("lastModifiedDate", new Timestamp(System.currentTimeMillis()));
+                bucketRecord.update();
+            }
+
+            // 写日志
+            logBucketOperation(ec, bucketId, userId, "UPLOAD", objectName, fileSize, "SUCCESS", null);
+
+            result.put("success", true);
+            result.put("objectName", objectName);
+            result.put("objectSize", fileSize);
+        } catch (Exception e) {
+            logBucketOperation(ec, bucketId, userId, "UPLOAD", objectName, 0L, "FAILURE", e.getMessage());
+            result.put("success", false);
+            ec.getMessage().addError("上传对象失败: " + e.getMessage());
+            ec.getLogger().error("Upload failed", e);
+        }
+        return result;
+    }
+
+    public static Map<String, Object> deleteObject(ExecutionContext ec) {
+        Map<String, Object> result = new HashMap<>();
+        Map<String, Object> parameters = ec.getContext();
+
+        String bucketId = (String) parameters.get("bucketId");
+        String userId = (String) parameters.get("userId");
+        String objectName = (String) parameters.get("objectName");
+
+        try {
+            MinioClient client = createMinioClient();
+
+            client.removeObject(RemoveObjectArgs.builder()
+                    .bucket(bucketId)
+                    .object(objectName)
+                    .build());
+
+            // ⚠️ 这里没有直接获取 objectSize，只能在上传时记录（可考虑扩展 ObjectMeta 表）
+            long fileSize = 0L;
+
+            // 更新 usedStorage（如果能知道对象大小）
+            // TODO: 可在 BucketUsageLog 中查询最后一次 UPLOAD 记录获取 objectSize
+            EntityValue bucketRecord = ec.getEntity().find("moqui.minio.Bucket")
+                    .condition("bucketId", bucketId).one();
+            if (bucketRecord != null) {
+                Long usedStorage = bucketRecord.getLong("usedStorage");
+                if (usedStorage != null && usedStorage > fileSize) {
+                    bucketRecord.set("usedStorage", usedStorage - fileSize);
+                    bucketRecord.update();
+                }
+            }
+
+            logBucketOperation(ec, bucketId, userId, "DELETE", objectName, fileSize, "SUCCESS", null);
+
+            result.put("success", true);
+        } catch (Exception e) {
+            logBucketOperation(ec, bucketId, userId, "DELETE", objectName, 0L, "FAILURE", e.getMessage());
+            result.put("success", false);
+            ec.getMessage().addError("删除对象失败: " + e.getMessage());
+        }
+        return result;
+    }
+
+    public static Map<String, Object> listObjects(ExecutionContext ec) {
+        Map<String, Object> result = new HashMap<>();
+        Map<String, Object> parameters = ec.getContext();
+
+        String bucketId = (String) parameters.get("bucketId");
+        String userId = (String) parameters.get("userId");
+
+        try {
+            MinioClient client = createMinioClient();
+            Iterable<Result<Item>> objects = client.listObjects(
+                    ListObjectsArgs.builder().bucket(bucketId).recursive(true).build()
+            );
+
+            List<Map<String, Object>> objectList = new ArrayList<>();
+            for (Result<Item> itemResult : objects) {
+                Item item = itemResult.get();
+                Map<String, Object> obj = new HashMap<>();
+                obj.put("objectName", item.objectName());
+                obj.put("size", item.size());
+                obj.put("lastModified", item.lastModified());
+                obj.put("etag", item.etag());
+                obj.put("isDir", item.isDir());
+                objectList.add(obj);
+            }
+
+            logBucketOperation(ec, bucketId, userId, "LIST", null, 0L, "SUCCESS", null);
+
+            result.put("success", true);
+            result.put("objects", objectList);
+        } catch (Exception e) {
+            logBucketOperation(ec, bucketId, userId, "LIST", null, 0L, "FAILURE", e.getMessage());
+            result.put("success", false);
+            ec.getMessage().addError("列举对象失败: " + e.getMessage());
+        }
+        return result;
+    }
+
+    public static Map<String, Object> downloadObject(ExecutionContext ec) {
+        Map<String, Object> result = new HashMap<>();
+        Map<String, Object> parameters = ec.getContext();
+
+        String bucketId = (String) parameters.get("bucketId");
+        String userId = (String) parameters.get("userId");
+        String objectName = (String) parameters.get("objectName");
+
+        try {
+            MinioClient client = createMinioClient();
+
+            // 生成预签名 URL（有效期1小时）
+            String url = client.getPresignedObjectUrl(
+                    GetPresignedObjectUrlArgs.builder()
+                            .method(Method.GET)
+                            .bucket(bucketId)
+                            .object(objectName)
+                            .expiry(60 * 60) // 秒
+                            .build()
+            );
+
+            logBucketOperation(ec, bucketId, userId, "DOWNLOAD", objectName, 0L, "SUCCESS", null);
+
+            result.put("success", true);
+            result.put("downloadUrl", url);
+        } catch (Exception e) {
+            logBucketOperation(ec, bucketId, userId, "DOWNLOAD", objectName, 0L, "FAILURE", e.getMessage());
+            result.put("success", false);
+            ec.getMessage().addError("下载对象失败: " + e.getMessage());
+        }
+        return result;
+    }
+
 
     // 辅助方法：记录操作日志
     private static void logBucketOperation(ExecutionContext ec, String bucketId, String userId,
