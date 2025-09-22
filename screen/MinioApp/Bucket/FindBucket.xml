@@ -24,16 +24,12 @@
         <set field="isAdmin" from="ec.user.isInGroup('ADMIN') || ec.user.isInGroup('ADMIN_ADV')"/>
         <set field="scope" from="scope ?: 'user'"/>
         <log level="info" message="BucketManagement actions 执行, userId=${userId}, scope=${scope}"/>
-        <script><![CDATA[
-            // 构建服务调用参数
-            Map serviceParams = [userId: userId]
-            if (scope == 'all') {
-                serviceParams.scope = 'all'
-            }
-            Map result = ec.service.sync().name("minio.MinioServices.list#Bucket").parameters(serviceParams).call()
-            bucketList = result.bucketList
-            ec.logger.info("获取到 bucketList, 数量=" + (bucketList ? bucketList.size() : 0))
-        ]]></script>
+        <!-- 使用entity-find和search-form-inputs来处理分页 -->
+        <entity-find entity-name="moqui.minio.Bucket" list="bucketList">
+            <search-form-inputs default-order-by="createdDate"/>
+            <econdition field-name="status" operator="not-equals" value="DELETED"/>
+            <econdition field-name="userId" value="${userId}" ignore="isAdmin &amp;&amp; scope == 'all'"/>
+        </entity-find>
     </actions>
 
     <widgets>
@@ -86,7 +82,7 @@
 
             <!-- 桶列表 -->
             <box-body>
-                <form-list name="ListBuckets" list="bucketList" paginate="true" skip-form="true">
+                <form-list name="ListBuckets" list="bucketList" skip-form="true" header-dialog="true" paginate="true">
                     <field name="bucketId">
                         <header-field title="${ec.l10n.localize('Bucket ID')}"/>
                         <default-field>
