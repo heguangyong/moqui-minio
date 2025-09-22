@@ -17,7 +17,7 @@ along with this software (see the LICENSE.md file). If not, see
         include-child-content="true" require-authentication="false" menu-image="fa fa-cloud" menu-image-type="icon">
     <subscreens default-item="BucketManagement">
         <subscreens-item name="BucketManagement" location="component://moqui-minio/screen/BucketManagement.xml"
-                         menu-title="${ec.l10n.localize('Bucket Management')}" menu-index="1" menu-include="true"/>
+                         menu-title="Bucket Management" menu-index="1" menu-include="true"/>
     </subscreens>
 <!--    <pre-actions>-->
 <!--        <set field="html_title" value="Minio Application"/>-->

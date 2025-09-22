@@ -4,12 +4,30 @@
         default-menu-title="Bucket Management"
         default-menu-index="10"
         default-menu-include="true"
-        require-authentication="false">
+        require-authentication="true">
+
+    <transition name="createBucket">
+        <service-call name="minio.MinioServices.create#Bucket"/>
+        <default-response url="."/>
+    </transition>
+    <transition name="updateBucket">
+        <service-call name="minio.MinioServices.update#Bucket"/>
+        <default-response url="."/>
+    </transition>
+    <transition name="deleteBucket">
+        <actions>
+            <log level="info" message="deleteBucket transition 被调用, bucketId=${bucketId}, userId=${userId}"/>
+            <service-call name="minio.MinioServices.delete#Bucket"/>
+        </actions>
+        <default-response url="."/>
+        <error-response url="."/>
+    </transition>
 
     <actions>
         <set field="userId" from="ec.user.userId"/>
         <set field="isAdmin" from="ec.user.isInGroup('ADMIN') || ec.user.isInGroup('ADMIN_ADV')"/>
         <set field="scope" from="scope ?: 'user'"/>
+        <log level="info" message="BucketManagement actions 执行, userId=${userId}, scope=${scope}"/>
         <script><![CDATA[
             // 构建服务调用参数
             Map serviceParams = [userId: userId]
@@ -18,6 +36,7 @@
             }
             Map result = ec.service.sync().name("minio.MinioServices.list#Bucket").parameters(serviceParams).call()
             bucketList = result.bucketList
+            ec.logger.info("获取到 bucketList, 数量=" + (bucketList ? bucketList.size() : 0))
         ]]></script>
     </actions>
 
@@ -34,7 +53,26 @@
                         <field name="bucketId"><default-field title="Bucket ID"><text-line size="20"/></default-field></field>
                         <field name="bucketName"><default-field title="Bucket Name"><text-line size="20"/></default-field></field>
                         <field name="userId"><default-field><hidden/></default-field></field>
+                        <field name="description"><default-field title="Description"><text-area rows="3" cols="50"/></default-field></field>
                         <field name="quotaLimit"><default-field title="Quota Limit (Bytes)"><text-line size="15" default-value="5368709120"/></default-field></field>
+                        <field name="isPublic"><default-field title="Public Access">
+                            <drop-down>
+                                <option key="N" text="Private"/>
+                                <option key="Y" text="Public"/>
+                            </drop-down>
+                        </default-field></field>
+                        <field name="versioning"><default-field title="Versioning">
+                            <drop-down>
+                                <option key="N" text="Disabled"/>
+                                <option key="Y" text="Enabled"/>
+                            </drop-down>
+                        </default-field></field>
+                        <field name="encryption"><default-field title="Encryption">
+                            <drop-down>
+                                <option key="N" text="Disabled"/>
+                                <option key="Y" text="Enabled"/>
+                            </drop-down>
+                        </default-field></field>
                         <field name="submitButton"><default-field title="Save"><submit/></default-field></field>
                     </form-single>
                 </container-dialog>
@@ -69,13 +107,26 @@
                         <header-field title="Created Date"/>
                         <default-field><display format="yyyy-MM-dd HH:mm:ss"/></default-field>
                     </field>
-                    <field name="delete">
+                    <field name="actions">
                         <header-field title="Actions"/>
                         <default-field>
-                            <link url="deleteBucket" text="Delete" link-type="anchor">
-                                <parameter name="bucketId" from="bucketId"/>
-                                <parameter name="userId" from="userId"/>
-                            </link>
+                            <container>
+                                <link url="deleteBucket" text="Delete" link-type="anchor" confirmation="确定要删除这个网盘吗？删除后将无法恢复。">
+                                    <parameter name="bucketId" from="bucketId"/>
+                                    <parameter name="userId" from="userId"/>
+                                </link>
+                                <label text=" | "/>
+                                <container-dialog id="EditBucketDialog" button-text="Edit">
+                                    <form-single name="EditBucketForm" transition="updateBucket">
+                                        <field name="bucketId"><default-field><hidden/></default-field></field>
+                                        <field name="userId"><default-field><hidden/></default-field></field>
+                                        <field name="bucketName"><default-field title="Bucket Name"><text-line size="20"/></default-field></field>
+                                        <field name="description"><default-field title="Description"><text-area rows="3" cols="50"/></default-field></field>
+                                        <field name="quotaLimit"><default-field title="Quota Limit (Bytes)"><text-line size="15"/></default-field></field>
+                                        <field name="submitButton"><default-field title="Update"><submit/></default-field></field>
+                                    </form-single>
+                                </container-dialog>
+                            </container>
                         </default-field>
                     </field>
                 </form-list>

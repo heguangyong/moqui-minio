@@ -142,13 +142,17 @@ public class MinioServiceRunner {
             String bucketId = (String) parameters.get("bucketId");
             String userId = (String) parameters.get("userId");
 
+            ec.getLogger().info("开始删除 bucket: bucketId=" + bucketId + ", userId=" + userId);
+
             // 参数验证
             if (bucketId == null || bucketId.trim().isEmpty()) {
                 ec.getMessage().addError("bucketId 不能为空");
+                ec.getLogger().warn("删除 bucket 失败: bucketId 为空");
                 return result;
             }
             if (userId == null || userId.trim().isEmpty()) {
                 ec.getMessage().addError("userId 不能为空");
+                ec.getLogger().warn("删除 bucket 失败: userId 为空");
                 return result;
             }
 
@@ -159,58 +163,84 @@ public class MinioServiceRunner {
                     .one();
 
             if (bucketRecord == null) {
-                ec.getMessage().addError("未找到 bucketId=" + bucketId + " 的 bucket 或无权限访问");
+                String errorMsg = "未找到 bucketId=" + bucketId + " 的 bucket 或无权限访问";
+                ec.getMessage().addError(errorMsg);
+                ec.getLogger().warn(errorMsg);
                 return result;
             }
 
+            ec.getLogger().info("找到要删除的 bucket 记录: " + bucketId);
+
             // 获取 MinIO 客户端
             MinioClient minioClient = createMinioClient();
+            ec.getLogger().info("成功创建 MinIO 客户端");
 
             // 检查并删除 MinIO bucket
-            boolean bucketExists = minioClient.bucketExists(
-                    BucketExistsArgs.builder()
-                            .bucket(bucketId)
-                            .build()
-            );
+            boolean bucketExists = false;
+            try {
+                bucketExists = minioClient.bucketExists(
+                        BucketExistsArgs.builder()
+                                .bucket(bucketId)
+                                .build()
+                );
+                ec.getLogger().info("检查 bucket 是否存在: " + bucketId + ", exists=" + bucketExists);
+            } catch (Exception e) {
+                String errorMsg = "检查 MinIO bucket 状态失败: " + e.getMessage();
+                ec.getMessage().addError(errorMsg);
+                logBucketOperation(ec, bucketId, userId, "DELETE", null, 0L, "FAILURE", e.getMessage());
+                ec.getLogger().error(errorMsg, e);
+                return result;
+            }
 
             if (bucketExists) {
                 try {
+                    ec.getLogger().info("开始删除 MinIO 中的 bucket: " + bucketId);
                     minioClient.removeBucket(
                             RemoveBucketArgs.builder()
                                     .bucket(bucketId)
                                     .build()
                     );
+                    ec.getLogger().info("成功删除 MinIO 中的 bucket: " + bucketId);
                 } catch (Exception minioException) {
-                    ec.getMessage().addError("删除 MinIO bucket 失败，可能 bucket 不为空: " + minioException.getMessage());
+                    String errorMsg = "删除 MinIO bucket 失败，可能 bucket 不为空: " + minioException.getMessage();
+                    ec.getMessage().addError(errorMsg);
                     logBucketOperation(ec, bucketId, userId, "DELETE", null, 0L, "FAILURE", minioException.getMessage());
+                    ec.getLogger().error(errorMsg, minioException);
                     return result;
                 }
+            } else {
+                ec.getLogger().info("MinIO 中的 bucket 不存在: " + bucketId);
             }
 
             // 更新 bucket 状态为 DELETED
+            ec.getLogger().info("开始更新数据库中的 bucket 状态为 DELETED: " + bucketId);
             bucketRecord.set("status", "DELETED");
             bucketRecord.set("lastModifiedDate", new Timestamp(System.currentTimeMillis()));
             bucketRecord.update();
+            ec.getLogger().info("成功更新数据库中的 bucket 状态为 DELETED: " + bucketId);
 
             // 删除相关权限记录
+            ec.getLogger().info("开始删除相关的权限记录: " + bucketId);
             EntityList permissionRecords = ec.getEntity().find("moqui.minio.BucketPermission")
                     .condition("bucketId", bucketId)
                     .list();
             for (EntityValue permission : permissionRecords) {
                 permission.delete();
             }
+            ec.getLogger().info("成功删除相关的权限记录: " + bucketId + ", 数量=" + permissionRecords.size());
 
             // 记录操作日志
             logBucketOperation(ec, bucketId, userId, "DELETE", null, 0L, "SUCCESS", null);
 
-            ec.getLogger().info("成功删除 MinIO bucket: bucketId=" + bucketId + ", userId=" + userId);
+            ec.getLogger().info("成功删除 bucket: bucketId=" + bucketId + ", userId=" + userId);
 
             result.put("success", true);
 
         } catch (Exception e) {
+            String errorMsg = "删除 bucket 失败: " + e.getMessage();
             logBucketOperation(ec, (String) parameters.get("bucketId"), (String) parameters.get("userId"),
                     "DELETE", null, 0L, "FAILURE", e.getMessage());
-            ec.getMessage().addError("删除 bucket 失败: " + e.getMessage());
+            ec.getMessage().addError(errorMsg);
             result.put("success", false);
             ec.getLogger().error("Failed to delete MinIO bucket", e);
         }
