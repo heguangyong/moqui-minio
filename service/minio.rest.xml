@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- MinIO REST API mapping for Moqui (rest-api-3.xsd) -->
+<resource xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/rest-api-3.xsd"
+          name="minio" displayName="MinIO REST API" version="1.0.0">
+
+    <!-- Buckets collection -->
+    <resource name="buckets" require-authentication="true">
+        <!-- list: 支持分页查询 (pageIndex,pageSize,scope,status,isPublic 等作为 query params) -->
+        <method type="get">
+            <service name="minio.MinioServices.list#Bucket"/>
+        </method>
+
+        <!-- create: 创建桶 -->
+        <method type="post">
+            <service name="minio.MinioServices.create#Bucket"/>
+        </method>
+
+        <!-- bucketId 资源（单个桶的操作） -->
+        <id name="bucketId">
+            <!-- get bucket info -->
+            <method type="get">
+                <service name="minio.MinioServices.get#Bucket"/>
+            </method>
+
+            <!-- patch: 局部更新 -->
+            <method type="patch">
+                <service name="minio.MinioServices.update#Bucket"/>
+            </method>
+
+            <!-- delete: 删除 -->
+            <method type="delete">
+                <service name="minio.MinioServices.delete#Bucket"/>
+            </method>
+        </id>
+    </resource>
+
+</resource>

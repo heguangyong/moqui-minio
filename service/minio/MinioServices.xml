@@ -65,12 +65,12 @@
         </out-parameters>
     </service>
 
-    <!-- 列表桶（支持分页） -->
+    <!-- 列表桶 -->
     <service verb="list" noun="Bucket" type="java"
              location="org.moqui.impl.service.runner.MinioServiceRunner"
              method="listBucket"
              authenticate="true">
-        <description>List buckets for a specific user via MinioServiceRunner with pagination support</description>
+        <description>List buckets for a specific user via MinioServiceRunner</description>
         <in-parameters>
             <parameter name="userId" type="String" required="true">
                 <description>User whose buckets to list</description>
@@ -84,24 +84,18 @@
             <parameter name="scope" type="String" required="false">
                 <description>Scope of listing: 'all' for admin view, default for user's buckets</description>
             </parameter>
-            <!-- 分页参数 -->
-            <parameter name="pageIndex" type="Integer" required="false" default-value="0">
-                <description>Page index for pagination (0-based)</description>
-            </parameter>
-            <parameter name="pageSize" type="Integer" required="false" default-value="20">
-                <description>Number of records per page</description>
-            </parameter>
+            <parameter name="pageIndex" type="Integer" default-value="0"/>
+            <parameter name="pageSize" type="Integer" default-value="5"/>
         </in-parameters>
         <out-parameters>
             <parameter name="bucketList" type="List">
-                <description>List of bucket information maps for current page</description>
-            </parameter>
-            <parameter name="bucketListCount" type="Integer">
-                <description>Total number of buckets found (for pagination)</description>
+                <description>List of bucket information maps</description>
             </parameter>
             <parameter name="totalCount" type="Integer">
                 <description>Total number of buckets found</description>
             </parameter>
+            <parameter name="pageIndex" type="Integer"/>
+            <parameter name="pageSize" type="Integer"/>
             <parameter name="success" type="Boolean"/>
         </out-parameters>
     </service>
@@ -137,74 +131,6 @@
         </in-parameters>
         <out-parameters>
             <parameter name="bucketInfo" type="Map"/>
-            <parameter name="success" type="Boolean"/>
-        </out-parameters>
-    </service>
-
-    <!-- 上传对象 -->
-    <service verb="upload" noun="Object" type="java"
-             location="org.moqui.impl.service.runner.MinioServiceRunner"
-             method="uploadObject"
-             authenticate="true">
-        <description>Upload an object to MinIO bucket</description>
-        <in-parameters>
-            <parameter name="bucketId" type="String" required="true"/>
-            <parameter name="userId" type="String" required="true"/>
-            <parameter name="objectName" type="String" required="true"/>
-            <parameter name="fileBytes" type="byte[]" required="true"/>
-        </in-parameters>
-        <out-parameters>
-            <parameter name="objectName" type="String"/>
-            <parameter name="objectSize" type="Long"/>
-            <parameter name="success" type="Boolean"/>
-        </out-parameters>
-    </service>
-
-    <!-- 删除对象 -->
-    <service verb="delete" noun="Object" type="java"
-             location="org.moqui.impl.service.runner.MinioServiceRunner"
-             method="deleteObject"
-             authenticate="true">
-        <description>Delete an object from MinIO bucket</description>
-        <in-parameters>
-            <parameter name="bucketId" type="String" required="true"/>
-            <parameter name="userId" type="String" required="true"/>
-            <parameter name="objectName" type="String" required="true"/>
-        </in-parameters>
-        <out-parameters>
-            <parameter name="success" type="Boolean"/>
-        </out-parameters>
-    </service>
-
-    <!-- 列出对象 -->
-    <service verb="list" noun="Objects" type="java"
-             location="org.moqui.impl.service.runner.MinioServiceRunner"
-             method="listObjects"
-             authenticate="true">
-        <description>List objects in a MinIO bucket</description>
-        <in-parameters>
-            <parameter name="bucketId" type="String" required="true"/>
-            <parameter name="userId" type="String" required="true"/>
-        </in-parameters>
-        <out-parameters>
-            <parameter name="objects" type="List"/>
-            <parameter name="success" type="Boolean"/>
-        </out-parameters>
-    </service>
-
-    <!-- 下载对象 -->
-    <service verb="download" noun="Object" type="java"
-             location="org.moqui.impl.service.runner.MinioServiceRunner"
-             method="downloadObject"
-             authenticate="true">
-        <description>Generate download URL for a MinIO object</description>
-        <in-parameters>
-            <parameter name="bucketId" type="String" required="true"/>
-            <parameter name="userId" type="String" required="true"/>
-            <parameter name="objectName" type="String" required="true"/>
-        </in-parameters>
-        <out-parameters>
-            <parameter name="downloadUrl" type="String"/>
             <parameter name="success" type="Boolean"/>
         </out-parameters>
     </service>
