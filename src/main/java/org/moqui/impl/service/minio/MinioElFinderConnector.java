@@ -11,7 +11,7 @@
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
  */
-package org.moqui.minio;
+package org.moqui.impl.service.minio;
 
 import org.apache.commons.fileupload.FileItem;
 import org.moqui.context.ExecutionContext;

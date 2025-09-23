@@ -27,7 +27,7 @@ along with this software (see the LICENSE.md file). If not, see
             <parameter name="fileInline" type="Boolean"/>
         </out-parameters>
         <actions>
-            <set field="minioConnector" from="new org.moqui.minio.MinioElFinderConnector(ec, bucketName)"/>
+            <set field="minioConnector" from="new org.moqui.impl.service.minio.MinioElFinderConnector(ec, bucketName)"/>
             <log level="info" message="Minio elFinder cmd=${cmd}, target=${target}"/>
             <script>minioConnector.runCommand()</script>
         </actions>
