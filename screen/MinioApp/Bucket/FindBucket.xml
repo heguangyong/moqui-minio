@@ -18,6 +18,12 @@
         <service-call name="minio.MinioServices.delete#Bucket"/>
         <default-response url="."/>
     </transition>
+    <transition name="fileExplorer">
+        <default-response url="../Bucket/FileExplorer/ElFinder">
+            <parameter name="bucketName"/>
+            <parameter name="resourceRoot"/>
+        </default-response>
+    </transition>
 
     <actions>
         <set field="userId" from="ec.user.userId"/>
@@ -82,7 +88,7 @@
                     <field name="bucketId">
                         <header-field title="${ec.l10n.localize('Bucket ID')}"/>
                         <default-field>
-                            <link text="${bucketId}" url="../Bucket/FileExplorer" parameter-map="[bucketName:bucketName]"/>
+                            <link text="${bucketId}" url="fileExplorer" parameter-map="[bucketName:bucketName]"/>
                         </default-field>
                     </field>
                     <field name="bucketName">
