@@ -2,6 +2,7 @@ package org.moqui.impl.service.runner;
 
 import io.minio.*;
 import io.minio.http.Method;
+import io.minio.messages.Bucket;
 import io.minio.messages.Item;
 import org.moqui.context.ExecutionContext;
 import org.moqui.entity.EntityValue;
@@ -396,6 +397,15 @@ public class MinioServiceRunner {
             String status = (String) parameters.get("status");
             String scope = (String) parameters.get("scope");
 
+            // 获取分页参数
+            Integer pageIndex = parameters.get("pageIndex") != null ?
+                    Integer.valueOf(parameters.get("pageIndex").toString()) : 0;
+            Integer pageSize = parameters.get("pageSize") != null ?
+                    Integer.valueOf(parameters.get("pageSize").toString()) : 20;
+
+            ec.getLogger().info("listBucket - 参数: userId=" + userId +
+                    ", scope=" + scope + ", pageIndex=" + pageIndex + ", pageSize=" + pageSize);
+
             // 参数验证
             if (userId == null || userId.trim().isEmpty()) {
                 ec.getMessage().addError("userId 不能为空");
@@ -405,15 +415,30 @@ public class MinioServiceRunner {
             // 检查用户是否具有管理员权限
             boolean isAdmin = ec.getUser().isInGroup("ADMIN") || ec.getUser().isInGroup("ADMIN_ADV");
 
-            // 构建查询
+            // 第一步：获取MinIO中的所有存储桶
+            MinioClient minioClient = null;
+            List<String> minioBucketNames = new ArrayList<>();
+
+            try {
+                minioClient = createMinioClient();
+                // 获取MinIO中的所有存储桶
+                List<Bucket> minioBuckets = minioClient.listBuckets();
+                for (Bucket bucket : minioBuckets) {
+                    minioBucketNames.add(bucket.name());
+                }
+                ec.getLogger().info("从MinIO获取到 " + minioBucketNames.size() + " 个存储桶");
+            } catch (Exception e) {
+                ec.getLogger().warn("无法获取MinIO存储桶列表，将只显示数据库记录", e);
+            }
+
+            // 第二步：查询数据库记录
             EntityFind bucketFind = ec.getEntity().find("moqui.minio.Bucket")
                     .condition("status", "!=", "DELETED")
                     .orderBy("createdDate");
 
-            // 如果是管理员且scope为all，或者scope为all且用户有权限，则显示所有桶
-            // 否则只显示用户自己的桶
-            if ((isAdmin && "all".equals(scope)) || "all".equals(scope)) {
-                // 管理员查看所有桶或明确要求查看所有桶，不添加userId条件
+            // 权限控制
+            if (isAdmin && "all".equals(scope)) {
+                // 管理员查看所有桶，不添加userId条件
                 ec.getLogger().info("管理员用户 " + userId + " 查看所有网盘");
             } else {
                 // 普通用户只查看自己的桶
@@ -427,69 +452,133 @@ public class MinioServiceRunner {
 
             EntityList bucketRecords = bucketFind.list();
 
-            List<Map<String, Object>> bucketList = new ArrayList<>();
-
-            // 获取 MinIO 客户端
-            MinioClient minioClient = null;
-            try {
-                minioClient = createMinioClient();
-            } catch (Exception e) {
-                ec.getLogger().warn("无法获取 MinIO 客户端，将跳过状态检查", e);
+            // 第三步：合并MinIO和数据库数据
+            Map<String, EntityValue> dbBucketMap = new HashMap<>();
+            for (EntityValue bucketRecord : bucketRecords) {
+                dbBucketMap.put(bucketRecord.getString("bucketId"), bucketRecord);
             }
 
-            for (EntityValue bucketRecord : bucketRecords) {
+            List<Map<String, Object>> allBucketList = new ArrayList<>();
+
+            // 处理MinIO中的存储桶
+            for (String bucketName : minioBucketNames) {
+                EntityValue dbRecord = dbBucketMap.get(bucketName);
                 Map<String, Object> bucketInfo = new HashMap<>();
-                String bucketId = bucketRecord.getString("bucketId");
 
-                // 基本信息
-                bucketInfo.put("bucketId", bucketId);
-                bucketInfo.put("userId", bucketRecord.getString("userId"));
-                bucketInfo.put("bucketName", bucketRecord.getString("bucketName"));
-                bucketInfo.put("quotaLimit", bucketRecord.getLong("quotaLimit"));
-                bucketInfo.put("usedStorage", bucketRecord.getLong("usedStorage"));
-                bucketInfo.put("status", bucketRecord.getString("status"));
-                bucketInfo.put("isPublic", bucketRecord.getString("isPublic"));
-                bucketInfo.put("versioning", bucketRecord.getString("versioning"));
-                bucketInfo.put("encryption", bucketRecord.getString("encryption"));
-                bucketInfo.put("createdDate", bucketRecord.getTimestamp("createdDate"));
-                bucketInfo.put("lastModifiedDate", bucketRecord.getTimestamp("lastModifiedDate"));
+                if (dbRecord != null) {
+                    // 数据库中有记录
+                    bucketInfo.put("bucketId", dbRecord.getString("bucketId"));
+                    bucketInfo.put("userId", dbRecord.getString("userId"));
+                    bucketInfo.put("bucketName", dbRecord.getString("bucketName"));
+                    bucketInfo.put("quotaLimit", dbRecord.getLong("quotaLimit"));
+                    bucketInfo.put("usedStorage", dbRecord.getLong("usedStorage"));
+                    bucketInfo.put("status", dbRecord.getString("status"));
+                    bucketInfo.put("isPublic", dbRecord.getString("isPublic"));
+                    bucketInfo.put("versioning", dbRecord.getString("versioning"));
+                    bucketInfo.put("encryption", dbRecord.getString("encryption"));
+                    bucketInfo.put("createdDate", dbRecord.getTimestamp("createdDate"));
+                    bucketInfo.put("lastModifiedDate", dbRecord.getTimestamp("lastModifiedDate"));
+                    bucketInfo.put("description", dbRecord.getString("description"));
+                    bucketInfo.put("existsInMinio", true);
 
-                // 检查 MinIO 中的实际状态
-                if (minioClient != null) {
-                    try {
-                        boolean exists = minioClient.bucketExists(
-                                BucketExistsArgs.builder()
-                                        .bucket(bucketId)
-                                        .build()
-                        );
-                        bucketInfo.put("existsInMinio", exists);
-
-                        // 如果状态不一致，更新数据库记录
-                        if (!exists && "ACTIVE".equals(bucketRecord.getString("status"))) {
-                            bucketRecord.set("status", "ERROR");
-                            bucketRecord.set("lastModifiedDate", new Timestamp(System.currentTimeMillis()));
-                            bucketRecord.update();
-                            bucketInfo.put("status", "ERROR");
-                        }
-
-                    } catch (Exception e) {
-                        ec.getLogger().warn("检查 bucket 状态失败: " + bucketId, e);
-                        bucketInfo.put("existsInMinio", false);
+                    // 如果状态不是ACTIVE，更新为ACTIVE
+                    if (!"ACTIVE".equals(dbRecord.getString("status"))) {
+                        dbRecord.set("status", "ACTIVE");
+                        dbRecord.set("lastModifiedDate", new Timestamp(System.currentTimeMillis()));
+                        dbRecord.update();
+                        bucketInfo.put("status", "ACTIVE");
                     }
+
+                    // 权限检查：如果不是管理员且scope不是all，只显示用户自己的桶
+                    if (!isAdmin || !"all".equals(scope)) {
+                        if (!userId.equals(dbRecord.getString("userId"))) {
+                            continue; // 跳过不属于当前用户的桶
+                        }
+                    }
+
                 } else {
-                    bucketInfo.put("existsInMinio", null);
+                    // MinIO中存在但数据库中没有记录，创建临时记录显示
+                    if (isAdmin && "all".equals(scope)) {
+                        bucketInfo.put("bucketId", bucketName);
+                        bucketInfo.put("userId", "unknown");
+                        bucketInfo.put("bucketName", bucketName);
+                        bucketInfo.put("quotaLimit", 0L);
+                        bucketInfo.put("usedStorage", 0L);
+                        bucketInfo.put("status", "UNKNOWN");
+                        bucketInfo.put("isPublic", "N");
+                        bucketInfo.put("versioning", "N");
+                        bucketInfo.put("encryption", "N");
+                        bucketInfo.put("createdDate", null);
+                        bucketInfo.put("lastModifiedDate", null);
+                        bucketInfo.put("description", "MinIO中存在，但数据库无记录");
+                        bucketInfo.put("existsInMinio", true);
+                    } else {
+                        continue; // 普通用户跳过未知桶
+                    }
                 }
 
-                bucketList.add(bucketInfo);
+                allBucketList.add(bucketInfo);
+            }
+
+            // 处理数据库中存在但MinIO中不存在的桶
+            for (EntityValue dbRecord : bucketRecords) {
+                String bucketId = dbRecord.getString("bucketId");
+                if (!minioBucketNames.contains(bucketId)) {
+                    // 权限检查
+                    if (!isAdmin || !"all".equals(scope)) {
+                        if (!userId.equals(dbRecord.getString("userId"))) {
+                            continue;
+                        }
+                    }
+
+                    Map<String, Object> bucketInfo = new HashMap<>();
+                    bucketInfo.put("bucketId", dbRecord.getString("bucketId"));
+                    bucketInfo.put("userId", dbRecord.getString("userId"));
+                    bucketInfo.put("bucketName", dbRecord.getString("bucketName"));
+                    bucketInfo.put("quotaLimit", dbRecord.getLong("quotaLimit"));
+                    bucketInfo.put("usedStorage", dbRecord.getLong("usedStorage"));
+                    bucketInfo.put("status", "ERROR"); // MinIO中不存在，状态标记为ERROR
+                    bucketInfo.put("isPublic", dbRecord.getString("isPublic"));
+                    bucketInfo.put("versioning", dbRecord.getString("versioning"));
+                    bucketInfo.put("encryption", dbRecord.getString("encryption"));
+                    bucketInfo.put("createdDate", dbRecord.getTimestamp("createdDate"));
+                    bucketInfo.put("lastModifiedDate", dbRecord.getTimestamp("lastModifiedDate"));
+                    bucketInfo.put("description", dbRecord.getString("description"));
+                    bucketInfo.put("existsInMinio", false);
+
+                    // 更新数据库状态为ERROR
+                    if (!"ERROR".equals(dbRecord.getString("status"))) {
+                        dbRecord.set("status", "ERROR");
+                        dbRecord.set("lastModifiedDate", new Timestamp(System.currentTimeMillis()));
+                        dbRecord.update();
+                    }
+
+                    allBucketList.add(bucketInfo);
+                }
+            }
+
+            // 第四步：实现分页
+            int totalCount = allBucketList.size();
+            int startIndex = pageIndex * pageSize;
+            int endIndex = Math.min(startIndex + pageSize, totalCount);
+
+            List<Map<String, Object>> pagedBucketList = new ArrayList<>();
+            if (startIndex < totalCount) {
+                pagedBucketList = allBucketList.subList(startIndex, endIndex);
             }
 
             // 记录查询操作
             logBucketOperation(ec, null, userId, "LIST", null, 0L, "SUCCESS", null);
 
-            ec.getLogger().info("查询用户 buckets 成功: userId=" + userId + ", 找到 " + bucketList.size() + " 个 buckets");
+            ec.getLogger().info("查询存储桶成功: userId=" + userId +
+                    ", 总数=" + totalCount + ", 分页=" + pagedBucketList.size() +
+                    ", pageIndex=" + pageIndex + ", pageSize=" + pageSize);
 
-            result.put("bucketList", bucketList);
-            result.put("totalCount", bucketList.size());
+            result.put("bucketList", pagedBucketList);
+            result.put("totalCount", totalCount);
+            result.put("bucketListCount", totalCount); // 为兼容性添加
+            result.put("bucketListPageIndex", pageIndex);
+            result.put("bucketListPageSize", pageSize);
             result.put("success", true);
 
         } catch (Exception e) {

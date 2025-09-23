@@ -23,13 +23,21 @@
         <set field="userId" from="ec.user.userId"/>
         <set field="isAdmin" from="ec.user.isInGroup('ADMIN') || ec.user.isInGroup('ADMIN_ADV')"/>
         <set field="scope" from="scope ?: 'user'"/>
+
+        <!-- 设置分页参数 -->
+        <set field="pageIndex" from="pageIndex ?: 0"/>
+        <set field="pageSize" from="pageSize ?: 20"/>
+
         <log level="info" message="BucketManagement actions 执行, userId=${userId}, scope=${scope}"/>
-        <!-- 使用entity-find和search-form-inputs来处理分页 -->
-        <entity-find entity-name="moqui.minio.Bucket" list="bucketList">
-            <search-form-inputs default-order-by="createdDate"/>
-            <econdition field-name="status" operator="not-equals" value="DELETED"/>
-            <econdition field-name="userId" value="${userId}" ignore="isAdmin &amp;&amp; scope == 'all'"/>
-        </entity-find>
+
+        <!-- 调用MinIO服务获取存储桶列表，而不是直接查询数据库 -->
+        <service-call name="minio.MinioServices.list#Bucket" in-map="context" out-map="bucketResult"/>
+
+        <!-- 从服务结果中获取数据，使用Moqui标准的分页变量命名 -->
+        <set field="bucketList" from="bucketResult.bucketList ?: []"/>
+        <set field="bucketListCount" from="bucketResult.totalCount ?: 0"/>
+
+        <log level="info" message="获取到存储桶数量: ${bucketListCount}"/>
     </actions>
 
     <widgets>
@@ -82,41 +90,44 @@
 
             <!-- 桶列表 -->
             <box-body>
-                <form-list name="ListBuckets" list="bucketList" skip-form="true" header-dialog="true" paginate="true">
+                <!-- 修改form-list配置，明确指定分页参数 -->
+                <form-list name="ListBuckets" list="bucketList" list-entry="bucket"
+                           skip-form="true" header-dialog="true" paginate="true"
+                           paginate-always-show="true">
                     <field name="bucketId">
                         <header-field title="${ec.l10n.localize('Bucket ID')}"/>
                         <default-field>
-                            <link text="${bucketId}" url="../Bucket/FileExplorer" parameter-map="[bucketName:bucketName]"/>
+                            <link text="${bucket.bucketId}" url="../Bucket/FileExplorer" parameter-map="[bucketName:bucket.bucketName]"/>
                         </default-field>
                     </field>
                     <field name="bucketName">
                         <header-field title="${ec.l10n.localize('Bucket Name')}"/>
-                        <default-field><display/></default-field>
+                        <default-field><display text="${bucket.bucketName}"/></default-field>
                     </field>
                     <field name="quotaLimit">
                         <header-field title="${ec.l10n.localize('Quota Limit (Bytes)')}"/>
-                        <default-field><display/></default-field>
+                        <default-field><display text="${bucket.quotaLimit}"/></default-field>
                     </field>
                     <field name="createdDate">
                         <header-field title="${ec.l10n.localize('Created Date')}"/>
-                        <default-field><display format="yyyy-MM-dd HH:mm:ss"/></default-field>
+                        <default-field><display text="${bucket.createdDate}" format="yyyy-MM-dd HH:mm:ss"/></default-field>
                     </field>
                     <field name="actions">
                         <header-field title="${ec.l10n.localize('Actions')}"/>
                         <default-field>
                             <link url="deleteBucket" text="${ec.l10n.localize('Delete')}" confirmation="确定要删除这个网盘吗？删除后将无法恢复。">
-                                    <parameter name="bucketId" from="bucketId"/>
-                                </link>
-                                <container-dialog id="EditBucketDialog" button-text="${ec.l10n.localize('Edit')}">
-                                    <form-single name="EditBucketForm" transition="updateBucket">
-                                        <field name="bucketId"><default-field><hidden/></default-field></field>
-                                        <field name="userId"><default-field><hidden/></default-field></field>
-                                        <field name="bucketName"><default-field title="${ec.l10n.localize('Bucket Name')}"><text-line size="20"/></default-field></field>
-                                        <field name="description"><default-field title="${ec.l10n.localize('Description')}"><text-area rows="3" cols="50"/></default-field></field>
-                                        <field name="quotaLimit"><default-field title="${ec.l10n.localize('Quota Limit (Bytes)')}"><text-line size="15"/></default-field></field>
-                                        <field name="submitButton"><default-field title="${ec.l10n.localize('Update')}"><submit/></default-field></field>
-                                    </form-single>
-                                </container-dialog>
+                                <parameter name="bucketId" from="bucket.bucketId"/>
+                            </link>
+                            <container-dialog id="EditBucketDialog" button-text="${ec.l10n.localize('Edit')}">
+                                <form-single name="EditBucketForm" transition="updateBucket">
+                                    <field name="bucketId"><default-field><hidden default-value="${bucket.bucketId}"/></default-field></field>
+                                    <field name="userId"><default-field><hidden default-value="${bucket.userId}"/></default-field></field>
+                                    <field name="bucketName"><default-field title="${ec.l10n.localize('Bucket Name')}"><text-line size="20" default-value="${bucket.bucketName}"/></default-field></field>
+                                    <field name="description"><default-field title="${ec.l10n.localize('Description')}"><text-area rows="3" cols="50" default-value="${bucket.description}"/></default-field></field>
+                                    <field name="quotaLimit"><default-field title="${ec.l10n.localize('Quota Limit (Bytes)')}"><text-line size="15" default-value="${bucket.quotaLimit}"/></default-field></field>
+                                    <field name="submitButton"><default-field title="${ec.l10n.localize('Update')}"><submit/></default-field></field>
+                                </form-single>
+                            </container-dialog>
                         </default-field>
                     </field>
                 </form-list>
