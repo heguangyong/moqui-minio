@@ -87,13 +87,13 @@
                 <form-list name="ListBuckets" list="bucketList"  paginate="true"  skip-form="true">
                     <field name="bucketId">
                         <header-field title="${ec.l10n.localize('Bucket ID')}"/>
-                        <default-field>
-                            <link text="${bucketId}" url="fileExplorer" parameter-map="[bucketName:bucketName, resourceRoot:'minio://' + bucketName]" />
-                        </default-field>
+                        <default-field><display/></default-field>
                     </field>
                     <field name="bucketName">
                         <header-field title="${ec.l10n.localize('Bucket Name')}"/>
-                        <default-field><display/></default-field>
+                        <default-field>
+                            <link text="${bucketName}" url="fileExplorer" parameter-map="[bucketName:bucketName, resourceRoot:'minio://' + bucketName]" />
+                        </default-field>
                     </field>
                     <field name="quotaLimit">
                         <header-field title="${ec.l10n.localize('Quota Limit (Bytes)')}"/>
