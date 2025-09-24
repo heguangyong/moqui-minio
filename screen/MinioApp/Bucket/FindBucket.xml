@@ -19,7 +19,7 @@
         <default-response url="."/>
     </transition>
     <transition name="fileExplorer">
-        <default-response url="/MinioApp/Bucket/FileExplorer/ElFinder">
+        <default-response url="../FileExplorer/ElFinder">
             <parameter name="bucketName"/>
             <parameter name="resourceRoot"/>
         </default-response>
@@ -92,7 +92,7 @@
                     <field name="bucketName">
                         <header-field title="${ec.l10n.localize('Bucket Name')}"/>
                         <default-field>
-                            <link text="${bucketName}" url="fileExplorer" parameter-map="[bucketName:bucketName, resourceRoot:'minio://' + bucketName]" />
+                            <link url="fileExplorer" text="${bucketName}" link-type="anchor"/>
                         </default-field>
                     </field>
                     <field name="quotaLimit">
