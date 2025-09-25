@@ -18,11 +18,25 @@
         <service-call name="minio.MinioServices.delete#Bucket"/>
         <default-response url="."/>
     </transition>
-    <transition name="fileExplorer">
-        <default-response url="../FileExplorer/ElFinder">
-            <parameter name="bucketName"/>
-            <parameter name="resourceRoot"/>
-        </default-response>
+    <transition name="bucketDetail">
+        <parameter name="bucketId"/>
+        <actions>
+            <log level="info" message="=== Bucket Detail Navigation Debug ==="/>
+            <log level="info" message="bucketId parameter: ${bucketId}"/>
+            <log level="info" message="Current screen path: ${ec.screen.location}"/>
+            <log level="info" message="Target URL: BucketDetail"/>
+            <log level="info" message="====================================="/>
+
+            <!-- 验证参数 -->
+            <if condition="!bucketId">
+                <then>
+                    <message error="true">Missing bucketId parameter</message>
+                    <default-response url="."/>
+                    <return/>
+                </then>
+            </if>
+        </actions>
+        <default-response url="BucketDetail"/>  <!-- 简化路径 -->
     </transition>
 
     <actions>
@@ -30,7 +44,7 @@
         <set field="isAdmin" from="ec.user.isInGroup('ADMIN') || ec.user.isInGroup('ADMIN_ADV')"/>
         <set field="scope" from="scope ?: 'user'"/>
         <service-call name="minio.MinioServices.list#Bucket"
-                      in-map="[userId:userId, scope:scope, pageIndex:pageIndex, pageSize:pageSize]"
+                      in-map="[userId:userId, scope:scope, pageIndex:pageIndex, pageSize:pageSize, bucketName:bucketName]"
                       out-map="context"/>
     </actions>
 
@@ -40,38 +54,14 @@
                 <label text="${ec.l10n.localize('Bucket Management')}" type="h2"/>
             </box-header>
 
-            <!-- 创建桶对话框 -->
             <box-toolbar>
                 <container-dialog id="CreateBucketDialog" button-text="${ec.l10n.localize('Create Bucket')}" type="primary">
-                    <form-single name="CreateBucketForm" transition="createBucket" focus-field="bucketId">
-                        <field name="bucketId"><default-field title="${ec.l10n.localize('Bucket ID')}"><text-line size="20"/></default-field></field>
-                        <field name="bucketName"><default-field title="${ec.l10n.localize('Bucket Name')}"><text-line size="20"/></default-field></field>
-                        <field name="userId"><default-field><hidden/></default-field></field>
-                        <field name="description"><default-field title="${ec.l10n.localize('Description')}"><text-area rows="3" cols="50"/></default-field></field>
-                        <field name="quotaLimit"><default-field title="${ec.l10n.localize('Quota Limit (Bytes)')}"><text-line size="15" default-value="5368709120"/></default-field></field>
-                        <field name="isPublic"><default-field title="${ec.l10n.localize('Public Access')}">
-                            <drop-down>
-                                <option key="N" text="${ec.l10n.localize('Private')}"/>
-                                <option key="Y" text="${ec.l10n.localize('Public')}"/>
-                            </drop-down>
-                        </default-field></field>
-                        <field name="versioning"><default-field title="${ec.l10n.localize('Versioning')}">
-                            <drop-down>
-                                <option key="N" text="${ec.l10n.localize('Disabled')}"/>
-                                <option key="Y" text="${ec.l10n.localize('Enabled')}"/>
-                            </drop-down>
-                        </default-field></field>
-                        <field name="encryption"><default-field title="${ec.l10n.localize('Encryption')}">
-                            <drop-down>
-                                <option key="N" text="${ec.l10n.localize('Disabled')}"/>
-                                <option key="Y" text="${ec.l10n.localize('Enabled')}"/>
-                            </drop-down>
-                        </default-field></field>
-                        <field name="submitButton"><default-field title="${ec.l10n.localize('Save')}"><submit/></default-field></field>
+                    <form-single name="CreateBucketForm" transition="createBucket" extends="component://moqui-minio/screen/MinioApp/Bucket/includes/BucketForm.xml#BucketForm">
+                        <set field="isCreate" value="true"/>
+                        <field name="submitButton"><default-field title=""><submit text="${ec.l10n.localize('Create')}"/></default-field></field>
                     </form-single>
                 </container-dialog>
 
-                <!-- 管理员查看选项 -->
                 <section name="adminView" condition="isAdmin">
                     <widgets>
                         <container>
@@ -82,9 +72,28 @@
                 </section>
             </box-toolbar>
 
-            <!-- 桶列表 -->
             <box-body>
-                <form-list name="ListBuckets" list="bucketList"  paginate="true"  skip-form="true">
+                <!-- Search Form -->
+                <form-single name="SearchForm" transition="." map="ec.web.parameters">
+                    <field-layout>
+                        <field-row-big>
+                            <field-ref name="bucketName"/><field-ref name="submitButton"/>
+                        </field-row-big>
+                    </field-layout>
+                    <field name="bucketName">
+                        <default-field title="${ec.l10n.localize('Bucket Name')}">
+                            <text-line size="30"/>
+                        </default-field>
+                    </field>
+                    <field name="submitButton">
+                        <default-field title="${ec.l10n.localize('Search')}">
+                            <submit/>
+                        </default-field>
+                    </field>
+                </form-single>
+
+                <!-- Bucket List -->
+                <form-list name="ListBuckets" list="bucketList" paginate="true" skip-form="true">
                     <field name="bucketId">
                         <header-field title="${ec.l10n.localize('Bucket ID')}"/>
                         <default-field><display/></default-field>
@@ -92,7 +101,9 @@
                     <field name="bucketName">
                         <header-field title="${ec.l10n.localize('Bucket Name')}"/>
                         <default-field>
-                            <link url="fileExplorer" text="${bucketName}" link-type="anchor"/>
+                            <link url="bucketDetail" text="${bucketName}" link-type="anchor">
+                                <parameter name="bucketId" from="bucketId"/>
+                            </link>
                         </default-field>
                     </field>
                     <field name="quotaLimit">
@@ -107,23 +118,18 @@
                         <header-field title="${ec.l10n.localize('Actions')}"/>
                         <default-field>
                             <link url="deleteBucket" text="${ec.l10n.localize('Delete')}" confirmation="确定要删除这个网盘吗？删除后将无法恢复。">
-                                    <parameter name="bucketId" from="bucketId"/>
-                                </link>
-                                <container-dialog id="EditBucketDialog" button-text="${ec.l10n.localize('Edit')}">
-                                    <form-single name="EditBucketForm" transition="updateBucket">
-                                        <field name="bucketId"><default-field><hidden/></default-field></field>
-                                        <field name="userId"><default-field><hidden/></default-field></field>
-                                        <field name="bucketName"><default-field title="${ec.l10n.localize('Bucket Name')}"><text-line size="20"/></default-field></field>
-                                        <field name="description"><default-field title="${ec.l10n.localize('Description')}"><text-area rows="3" cols="50"/></default-field></field>
-                                        <field name="quotaLimit"><default-field title="${ec.l10n.localize('Quota Limit (Bytes)')}"><text-line size="15"/></default-field></field>
-                                        <field name="submitButton"><default-field title="${ec.l10n.localize('Update')}"><submit/></default-field></field>
-                                    </form-single>
-                                </container-dialog>
+                                <parameter name="bucketId" from="bucketId"/>
+                            </link>
+                            <container-dialog id="EditBucketDialog_${bucketId}" button-text="${ec.l10n.localize('Edit')}">
+                                <form-single name="EditBucketForm" transition="updateBucket" map="bucketList_entry" extends="component://moqui-minio/screen/MinioApp/Bucket/includes/BucketForm.xml#BucketForm">
+                                    <set field="isCreate" value="false"/>
+                                    <field name="submitButton"><default-field title=""><submit text="${ec.l10n.localize('Update')}"/></default-field></field>
+                                </form-single>
+                            </container-dialog>
                         </default-field>
                     </field>
                 </form-list>
             </box-body>
-
         </container-box>
     </widgets>
 </screen>
