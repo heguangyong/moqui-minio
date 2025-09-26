@@ -3,7 +3,7 @@
 
     <moqui.security.ArtifactGroup artifactGroupId="MINIO_APP" description="Minio App (via root screen)"/>
     <moqui.security.ArtifactGroupMember artifactGroupId="MINIO_APP" artifactTypeEnumId="AT_XML_SCREEN"
-            inheritAuthz="Y" artifactName="component://moqui-minio/screen/App.xml"/>
+            inheritAuthz="Y" artifactName="component://moqui-minio/screen/MinioApp.xml"/>
     <moqui.security.ArtifactAuthz artifactAuthzId="MINIO_AUTHZ_ALL" userGroupId="ADMIN" artifactGroupId="MINIO_APP"
             authzTypeEnumId="AUTHZT_ALWAYS" authzActionEnumId="AUTHZA_ALL"/>
 

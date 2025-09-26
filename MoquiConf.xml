@@ -14,10 +14,8 @@
 
     <screen-facade>
         <screen location="component://webroot/screen/webroot/apps.xml">
-            <subscreens>
-                <subscreens-item name="minio" menu-title="Minio" menu-index="10"
-                                 location="component://moqui-minio/screen/MinioApp.xml"/>
-            </subscreens>
+            <subscreens-item name="minio" menu-title="对象存储" menu-index="10" menu-include="true"
+                             location="component://moqui-minio/screen/MinioApp.xml"/>
         </screen>
     </screen-facade>
 </moqui-conf>
