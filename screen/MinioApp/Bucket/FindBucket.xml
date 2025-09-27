@@ -7,10 +7,25 @@
         require-authentication="true">
 
     <transition name="createBucket">
+        <actions>
+            <!-- 将GB转换为Bytes -->
+            <if condition="quotaLimitGB">
+                <set field="quotaLimit" from="Long.valueOf(quotaLimitGB) * 1024 * 1024 * 1024"/>
+            <else>
+                <set field="quotaLimit" value="5368709120"/><!-- 5GB默认值 -->
+            </else>
+            </if>
+        </actions>
         <service-call name="minio.MinioServices.create#Bucket"/>
         <default-response url="."/>
     </transition>
     <transition name="updateBucket">
+        <actions>
+            <!-- 将GB转换为Bytes -->
+            <if condition="quotaLimitGB">
+                <set field="quotaLimit" from="Long.valueOf(quotaLimitGB) * 1024 * 1024 * 1024"/>
+            </if>
+        </actions>
         <service-call name="minio.MinioServices.update#Bucket"/>
         <default-response url="."/>
     </transition>
@@ -69,6 +84,7 @@
                         <field name="bucketId">
                             <default-field title="${ec.l10n.localize('存储桶ID')}">
                                 <text-line size="30" maxlength="63"/>
+                                <label text="只能包含小写字母、数字和连字符(-)，3-63字符，不能以连字符开头或结尾" type="p" style="text-muted"/>
                             </default-field>
                         </field>
 
@@ -81,6 +97,22 @@
                         <field name="description">
                             <default-field title="${ec.l10n.localize('描述')}">
                                 <text-area rows="3" cols="50"/>
+                            </default-field>
+                        </field>
+
+                        <field name="quotaLimitGB">
+                            <default-field title="${ec.l10n.localize('配额限制(GB)')}">
+                                <drop-down>
+                                    <option key="1" text="1 GB"/>
+                                    <option key="2" text="2 GB"/>
+                                    <option key="5" text="5 GB (默认)" selected="selected"/>
+                                    <option key="10" text="10 GB"/>
+                                    <option key="20" text="20 GB"/>
+                                    <option key="50" text="50 GB"/>
+                                    <option key="100" text="100 GB"/>
+                                    <option key="500" text="500 GB"/>
+                                    <option key="1024" text="1 TB"/>
+                                </drop-down>
                             </default-field>
                         </field>
 
@@ -120,17 +152,19 @@
 
                     <!-- 创建者 - 仅管理员可见，简化为文本输入 -->
                     <field name="userId">
-                        <header-field title="${ec.l10n.localize('创建者ID')}" show-order-by="true"><text-find/></header-field>
+                        <header-field title="${ec.l10n.localize('创建者')}" show-order-by="true"><text-find/></header-field>
                         <conditional-field condition="isAdmin">
-                            <display-entity entity-name="moqui.security.UserAccount" text="${firstName} ${lastName}"/>
+                            <display-entity entity-name="moqui.security.UserAccount" text="${userFullName ?: username ?: userId}" key-field-name="userId"/>
                         </conditional-field>
                         <default-field><ignored/></default-field>
                     </field>
 
                     <!-- 配额限制 -->
                     <field name="quotaLimit">
-                        <header-field title="${ec.l10n.localize('配额限制(字节)')}" show-order-by="true"/>
-                        <default-field><display/></default-field>
+                        <header-field title="${ec.l10n.localize('配额限制')}" show-order-by="true"/>
+                        <default-field>
+                            <display text="${ec.l10n.format(quotaLimit / (1024*1024*1024), '#,##0.#')} GB"/>
+                        </default-field>
                     </field>
 
                     <!-- 描述 -->
@@ -154,6 +188,13 @@
                             </link>
                             <container-dialog id="EditBucketDialog_${bucketId}" button-text="${ec.l10n.localize('编辑')}">
                                 <form-single name="EditBucketForm" transition="updateBucket" map="bucketList_entry">
+                                    <!-- 计算当前配额的GB值 -->
+                                    <field name="quotaLimitGBCurrent">
+                                        <default-field>
+                                            <display text="当前配额: ${ec.l10n.format(quotaLimit / (1024*1024*1024), '#,##0.#')} GB"/>
+                                        </default-field>
+                                    </field>
+
                                     <!-- Hidden fields -->
                                     <field name="bucketId"><default-field><hidden/></default-field></field>
                                     <field name="userId"><default-field><hidden default-value="${ec.user.userId}"/></default-field></field>
@@ -171,9 +212,19 @@
                                         </default-field>
                                     </field>
 
-                                    <field name="quotaLimit">
-                                        <default-field title="${ec.l10n.localize('配额限制(字节)')}">
-                                            <text-line size="20"/>
+                                    <field name="quotaLimitGB">
+                                        <default-field title="${ec.l10n.localize('配额限制(GB)')}">
+                                            <drop-down>
+                                                <option key="1" text="1 GB"/>
+                                                <option key="2" text="2 GB"/>
+                                                <option key="5" text="5 GB"/>
+                                                <option key="10" text="10 GB"/>
+                                                <option key="20" text="20 GB"/>
+                                                <option key="50" text="50 GB"/>
+                                                <option key="100" text="100 GB"/>
+                                                <option key="500" text="500 GB"/>
+                                                <option key="1024" text="1 TB"/>
+                                            </drop-down>
                                         </default-field>
                                     </field>
 

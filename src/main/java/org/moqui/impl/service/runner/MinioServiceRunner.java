@@ -38,6 +38,7 @@ public class MinioServiceRunner {
             String bucketId = (String) parameters.get("bucketId");
             String userId = (String) parameters.get("userId");
             String bucketName = (String) parameters.get("bucketName");
+            String description = (String) parameters.get("description");
             Long quotaLimit = (Long) parameters.get("quotaLimit");
 
             // 参数验证
@@ -47,6 +48,12 @@ public class MinioServiceRunner {
             }
             if (userId == null || userId.trim().isEmpty()) {
                 ec.getMessage().addError("userId 不能为空");
+                return result;
+            }
+
+            // S3 存储桶命名规则验证
+            if (!isValidS3BucketName(bucketId)) {
+                ec.getMessage().addError("存储桶ID不符合S3命名规范：只能包含小写字母、数字和连字符(-)，长度3-63字符，不能以连字符开头或结尾");
                 return result;
             }
 
@@ -96,6 +103,7 @@ public class MinioServiceRunner {
                     .set("bucketId", bucketId)
                     .set("userId", userId)
                     .set("bucketName", bucketName)
+                    .set("description", description)
                     .set("quotaLimit", quotaLimit)
                     .set("usedStorage", 0L)
                     .set("status", "ACTIVE")
@@ -120,7 +128,8 @@ public class MinioServiceRunner {
             logBucketOperation(ec, bucketId, userId, "CREATE", null, 0L, "SUCCESS", null);
 
             ec.getLogger().info("成功创建 MinIO bucket: bucketId=" + bucketId +
-                    ", userId=" + userId + ", bucketName=" + bucketName);
+                    ", userId=" + userId + ", bucketName=" + bucketName +
+                    ", description=" + description);
 
             result.put("bucketId", bucketId);
             result.put("success", true);
@@ -729,5 +738,29 @@ public class MinioServiceRunner {
         } catch (Exception e) {
             ec.getLogger().warn("记录 bucket 操作日志失败", e);
         }
+    }
+
+    // 验证S3存储桶命名规则
+    private static boolean isValidS3BucketName(String bucketName) {
+        if (bucketName == null || bucketName.length() < 3 || bucketName.length() > 63) {
+            return false;
+        }
+
+        // 只能包含小写字母、数字和连字符
+        if (!bucketName.matches("^[a-z0-9-]+$")) {
+            return false;
+        }
+
+        // 不能以连字符开头或结尾
+        if (bucketName.startsWith("-") || bucketName.endsWith("-")) {
+            return false;
+        }
+
+        // 不能包含连续的连字符
+        if (bucketName.contains("--")) {
+            return false;
+        }
+
+        return true;
     }
 }
