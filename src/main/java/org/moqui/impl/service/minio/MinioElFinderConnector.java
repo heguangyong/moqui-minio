@@ -50,8 +50,21 @@ public class MinioElFinderConnector {
     public MinioElFinderConnector(ExecutionContext ec, String bucketName) {
         this.ec = ec;
         this.bucketName = bucketName;
-        // 获取MinioClient实例，这里假设已经在Moqui配置中配置好了
-        this.minioClient = ec.getTool("Minio", MinioClient.class);
+        // 创建MinioClient实例，与MinioServiceRunner中的方法一致
+        this.minioClient = createMinioClient();
+    }
+
+    // 创建 MinIO 客户端的辅助方法，与MinioServiceRunner保持一致
+    private static MinioClient createMinioClient() {
+        // 从系统属性或环境变量读取配置
+        String endpoint = System.getProperty("minio.endpoint", "http://localhost:9000");
+        String accessKey = System.getProperty("minio.accessKey", "admin");
+        String secretKey = System.getProperty("minio.secretKey", "admin123");
+
+        return MinioClient.builder()
+                .endpoint(endpoint)
+                .credentials(accessKey, secretKey)
+                .build();
     }
 
     public String hash(String str) {
@@ -117,11 +130,12 @@ public class MinioElFinderConnector {
     }
 
     @SuppressWarnings("unchecked")
-    public Map<String, Object> getLocationInfo(String location) { 
+    public Map<String, Object> getLocationInfo(String location) {
         try {
             String objectName = location.substring(("minio://" + bucketName + "/").length());
+            String originalObjectName = objectName;
             if (objectName.endsWith("/")) objectName = objectName.substring(0, objectName.length() - 1);
-            
+
             // 如果是根目录
             if (objectName.equals("") || objectName.equals("root")) {
                 Map<String, Object> info = new HashMap<>();
@@ -134,28 +148,51 @@ public class MinioElFinderConnector {
                 info.put("locked", 0);
                 return info;
             }
-            
-            // 尝试获取对象信息
-            // 注意：statObject方法返回的是StatObjectResponse而不是Item
-            StatObjectResponse stat = minioClient.statObject(StatObjectArgs.builder().bucket(bucketName).object(objectName).build());
-            
-            Map<String, Object> info = new HashMap<>();
-            String name = objectName.contains("/") ? objectName.substring(objectName.lastIndexOf("/") + 1) : objectName;
-            info.put("name", name);
-            info.put("hash", hash(objectName));
-            
-            String parentPath = objectName.contains("/") ? objectName.substring(0, objectName.lastIndexOf("/")) : "root";
-            info.put("phash", hash(parentPath));
-            
-            info.put("mime", objectName.endsWith("/") ? "directory" : "application/octet-stream");
-            info.put("ts", stat.lastModified().toInstant().toEpochMilli());
-            info.put("size", stat.size());
-            info.put("dirs", hasChildDirectories(objectName) ? 1 : 0);
-            info.put("read", 1);
-            info.put("write", 1);
-            info.put("locked", 0);
-            
-            return info;
+
+            // 首先检查是否是目录（通过检查是否有子对象）
+            boolean isDirectory = originalObjectName.endsWith("/") || hasChildDirectories(objectName + "/");
+
+            if (isDirectory) {
+                // 处理目录
+                Map<String, Object> info = new HashMap<>();
+                String name = objectName.contains("/") ? objectName.substring(objectName.lastIndexOf("/") + 1) : objectName;
+                info.put("name", name);
+                info.put("hash", hash(objectName + "/"));
+
+                String parentPath = objectName.contains("/") ? objectName.substring(0, objectName.lastIndexOf("/")) : "root";
+                info.put("phash", hash(parentPath));
+
+                info.put("mime", "directory");
+                info.put("ts", System.currentTimeMillis()); // 目录使用当前时间
+                info.put("size", 0); // 目录大小为0
+                info.put("dirs", hasChildDirectories(objectName + "/") ? 1 : 0);
+                info.put("read", 1);
+                info.put("write", 1);
+                info.put("locked", 0);
+
+                return info;
+            } else {
+                // 处理文件 - 尝试获取对象信息
+                StatObjectResponse stat = minioClient.statObject(StatObjectArgs.builder().bucket(bucketName).object(objectName).build());
+
+                Map<String, Object> info = new HashMap<>();
+                String name = objectName.contains("/") ? objectName.substring(objectName.lastIndexOf("/") + 1) : objectName;
+                info.put("name", name);
+                info.put("hash", hash(objectName));
+
+                String parentPath = objectName.contains("/") ? objectName.substring(0, objectName.lastIndexOf("/")) : "root";
+                info.put("phash", hash(parentPath));
+
+                info.put("mime", "application/octet-stream");
+                info.put("ts", stat.lastModified().toInstant().toEpochMilli());
+                info.put("size", stat.size());
+                info.put("dirs", 0);
+                info.put("read", 1);
+                info.put("write", 1);
+                info.put("locked", 0);
+
+                return info;
+            }
         } catch (Exception e) {
             logger.error("Error getting location info for " + location, e);
             return new HashMap<>();
@@ -185,9 +222,11 @@ public class MinioElFinderConnector {
 
     @SuppressWarnings("unchecked")
     public List<Map<String, Object>> getFiles(String target, boolean tree) {
+        logger.info("getFiles called with target: " + target + ", tree: " + tree);
         List<Map<String, Object>> files = new ArrayList<>();
         String location = getLocation(target);
         String objectName = location.substring(("minio://" + bucketName + "/").length());
+        logger.info("location: " + location + ", objectName: " + objectName);
         
         if (objectName.equals("") || objectName.equals("root")) {
             // 获取根目录下的所有对象
@@ -203,6 +242,7 @@ public class MinioElFinderConnector {
                 try {
                     Item item = result.get();
                     String itemName = item.objectName();
+                    logger.info("Processing item: " + itemName + " (isDir: " + item.isDir() + ")");
                     if (!itemName.contains("/")) {
                         // 根目录下的文件
                         Map<String, Object> info = new HashMap<>();
@@ -210,7 +250,16 @@ public class MinioElFinderConnector {
                         info.put("hash", hash(itemName));
                         info.put("phash", hash("root"));
                         info.put("mime", "application/octet-stream");
-                        info.put("ts", item.lastModified().toInstant().toEpochMilli());
+                        try {
+                            if (item.lastModified() != null) {
+                                info.put("ts", item.lastModified().toInstant().toEpochMilli());
+                            } else {
+                                info.put("ts", System.currentTimeMillis());
+                            }
+                        } catch (Exception tsException) {
+                            logger.warn("Could not get lastModified for file " + itemName + ": " + tsException.getMessage());
+                            info.put("ts", System.currentTimeMillis());
+                        }
                         info.put("size", item.size());
                         info.put("dirs", 0);
                         info.put("read", 1);
@@ -219,13 +268,23 @@ public class MinioElFinderConnector {
                         files.add(info);
                     } else if (itemName.indexOf("/") == itemName.length() - 1) {
                         // 根目录下的目录
+                        logger.info("Found directory: " + itemName);
                         String dirName = itemName.substring(0, itemName.length() - 1);
                         Map<String, Object> info = new HashMap<>();
                         info.put("name", dirName);
                         info.put("hash", hash(dirName + "/"));
                         info.put("phash", hash("root"));
                         info.put("mime", "directory");
-                        info.put("ts", item.lastModified().toInstant().toEpochMilli());
+                        try {
+                            if (item.lastModified() != null) {
+                                info.put("ts", item.lastModified().toInstant().toEpochMilli());
+                            } else {
+                                info.put("ts", System.currentTimeMillis());
+                            }
+                        } catch (Exception tsException) {
+                            logger.warn("Could not get lastModified for directory " + dirName + ": " + tsException.getMessage());
+                            info.put("ts", System.currentTimeMillis());
+                        }
                         info.put("size", item.size());
                         info.put("dirs", hasChildDirectories(dirName + "/") ? 1 : 0);
                         info.put("read", 1);
@@ -260,7 +319,16 @@ public class MinioElFinderConnector {
                         info.put("hash", hash(itemName));
                         info.put("phash", hash(objectName));
                         info.put("mime", "application/octet-stream");
-                        info.put("ts", item.lastModified().toInstant().toEpochMilli());
+                        try {
+                            if (item.lastModified() != null) {
+                                info.put("ts", item.lastModified().toInstant().toEpochMilli());
+                            } else {
+                                info.put("ts", System.currentTimeMillis());
+                            }
+                        } catch (Exception tsException) {
+                            logger.warn("Could not get lastModified for item: " + tsException.getMessage());
+                            info.put("ts", System.currentTimeMillis());
+                        }
                         info.put("size", item.size());
                         info.put("dirs", 0);
                         info.put("read", 1);
@@ -275,7 +343,16 @@ public class MinioElFinderConnector {
                         info.put("hash", hash(itemName));
                         info.put("phash", hash(objectName));
                         info.put("mime", "directory");
-                        info.put("ts", item.lastModified().toInstant().toEpochMilli());
+                        try {
+                            if (item.lastModified() != null) {
+                                info.put("ts", item.lastModified().toInstant().toEpochMilli());
+                            } else {
+                                info.put("ts", System.currentTimeMillis());
+                            }
+                        } catch (Exception tsException) {
+                            logger.warn("Could not get lastModified for item: " + tsException.getMessage());
+                            info.put("ts", System.currentTimeMillis());
+                        }
                         info.put("size", item.size());
                         info.put("dirs", hasChildDirectories(itemName) ? 1 : 0);
                         info.put("read", 1);

@@ -18,6 +18,10 @@ along with this software (see the LICENSE.md file). If not, see
     <parameter name="bucketName" required="true"/>
     <parameter name="resourceRoot"/>
 
+    <actions>
+        <set field="resourceRoot" from="resourceRoot ?: ('minio://' + bucketName)"/>
+    </actions>
+
     <widgets>
         <container-panel id="el-finder-container">
             <panel-header>
@@ -26,7 +30,10 @@ along with this software (see the LICENSE.md file). If not, see
                 </container>
             </panel-header>
             <panel-center>
-                <include-screen location="ElFinder.xml"/>
+                <include-screen location="component://moqui-minio/screen/MinioApp/Bucket/FileExplorer/ElFinder.xml">
+                    <set field="bucketName" from="bucketName"/>
+                    <set field="resourceRoot" from="resourceRoot"/>
+                </include-screen>
             </panel-center>
         </container-panel>
     </widgets>

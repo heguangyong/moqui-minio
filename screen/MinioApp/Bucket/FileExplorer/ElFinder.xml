@@ -27,18 +27,20 @@ along with this software (see the LICENSE.md file). If not, see
     <!-- set read-only=true because in spite of setting requestType:'post' some requests come as gets -->
     <transition name="command" read-only="true">
         <actions>
-            <!-- <log level="warn" message="============ resourceRoot=${resourceRoot}, ec.web.parameters=${ec.web.parameters}"/> -->
+            <!-- 检查resourceRoot是否为minio协议，如果是则使用MinIO专用Connector -->
             <if condition="resourceRoot?.startsWith('minio://')">
-                <then>
-                    <set field="bucketNameFromResource" from="resourceRoot.substring(7)"/>
-                    <service-call name="org.moqui.minio.MinioElFinderServices.run#ElfinderCommand" out-map="context"
-                            in-map="context + [otherParameters:ec.web.parameters, bucketName:bucketNameFromResource]"/>
-                </then>
-                <else-if condition="bucketName">
-                    <service-call name="org.moqui.minio.MinioElFinderServices.run#ElfinderCommand" out-map="context"
-                            in-map="context + [otherParameters:ec.web.parameters, bucketName:bucketName]"/>
-                </else-if>
+                <!-- 提取bucketName并直接调用MinIO Connector -->
+                <set field="minioConnector" from="new org.moqui.impl.service.minio.MinioElFinderConnector(ec, bucketName)"/>
+                <script>
+                    // 设置MinioElFinderConnector需要的参数到context
+                    ec.context.put("otherParameters", ec.web.parameters)
+                    minioConnector.runCommand()
+                    responseMap = context.responseMap
+                    fileLocation = context.fileLocation
+                    fileInline = context.fileInline
+                </script>
                 <else>
+                    <!-- 对于非MinIO资源，使用通用ElFinder服务 -->
                     <service-call name="org.moqui.impl.ElFinderServices.run#Command" out-map="context"
                             in-map="context + [otherParameters:ec.web.parameters]"/>
                 </else>
@@ -57,13 +59,16 @@ along with this software (see the LICENSE.md file). If not, see
         <if condition="bucketName"><script>rootOptions.add('minio://' + bucketName)</script></if>
     </actions>
     <widgets>
-        <form-single name="SelectRoot" transition=".">
-            <field name="resourceRoot"><default-field title="">
-                <drop-down><list-options list="rootOptions"/></drop-down>
-            </default-field></field>
-            <field name="submitButton"><default-field title="Select Root"><submit/></default-field></field>
-            <field-layout><field-row-big><field-ref name="resourceRoot"/><field-ref name="submitButton"/></field-row-big></field-layout>
-        </form-single>
+        <!-- 隐藏根选择功能，直接显示存储桶内容 -->
+        <container style="display:none;">
+            <form-single name="SelectRoot" transition=".">
+                <field name="resourceRoot"><default-field title="">
+                    <drop-down><list-options list="rootOptions"/></drop-down>
+                </default-field></field>
+                <field name="submitButton"><default-field title="Select Root"><submit/></default-field></field>
+                <field-layout><field-row-big><field-ref name="resourceRoot"/><field-ref name="submitButton"/></field-row-big></field-layout>
+            </form-single>
+        </container>
         <render-mode><text type="html,vuet,qvt"><![CDATA[
             <div id="elfinder"></div>
             <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.13.2/themes/smoothness/jquery-ui.min.css" type="text/css"/>
@@ -73,7 +78,7 @@ along with this software (see the LICENSE.md file). If not, see
             <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/elfinder/2.1.62/css/theme.min.css" type="text/css"/>
             <script src="https://cdnjs.cloudflare.com/ajax/libs/elfinder/2.1.62/js/elfinder.min.js" type="text/javascript"></script>
             <script>
-    $('#elfinder').elfinder({ url:'${sri.buildUrl('command').url}', customData:{ moquiSessionToken:'${ec.web.sessionToken}', resourceRoot:'${resourceRoot}' },
+    $('#elfinder').elfinder({ url:'/apps/minio/Bucket/FileExplorer/ElFinder/command', customData:{ moquiSessionToken:'${ec.web.sessionToken}', resourceRoot:'${resourceRoot}', bucketName:'${bucketName}' },
         lang:'en', defaultView:'list', requestType:'post', rememberLastDir:false, height:700,
         commands : [ 'open', 'reload', 'home', 'up', 'back', 'forward', 'getfile', 'quicklook',
             'download', 'rm', 'rename', 'mkdir', 'mkfile', 'upload', 'edit', 'info', 'view', 'help',
