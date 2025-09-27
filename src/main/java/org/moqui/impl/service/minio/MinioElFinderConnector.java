@@ -38,6 +38,7 @@ import java.nio.charset.StandardCharsets;
 import java.io.ByteArrayInputStream;
 import java.util.*;
 import java.util.Scanner;
+import java.time.ZonedDateTime;
 
 /**
  * MinIO ElFinder连接器
@@ -243,8 +244,9 @@ public class MinioElFinderConnector {
                         info.put("phash", hash("root"));
                         info.put("mime", "application/octet-stream");
                         try {
-                            if (item.lastModified() != null) {
-                                info.put("ts", item.lastModified().toInstant().toEpochMilli());
+                            ZonedDateTime lastModified = item.lastModified();
+                            if (lastModified != null) {
+                                info.put("ts", lastModified.toInstant().toEpochMilli());
                             } else {
                                 info.put("ts", System.currentTimeMillis());
                             }
@@ -268,8 +270,9 @@ public class MinioElFinderConnector {
                         info.put("phash", hash("root"));
                         info.put("mime", "directory");
                         try {
-                            if (item.lastModified() != null) {
-                                info.put("ts", item.lastModified().toInstant().toEpochMilli());
+                            ZonedDateTime lastModified = item.lastModified();
+                            if (lastModified != null) {
+                                info.put("ts", lastModified.toInstant().toEpochMilli());
                             } else {
                                 info.put("ts", System.currentTimeMillis());
                             }
@@ -312,8 +315,9 @@ public class MinioElFinderConnector {
                         info.put("phash", hash(objectName));
                         info.put("mime", "application/octet-stream");
                         try {
-                            if (item.lastModified() != null) {
-                                info.put("ts", item.lastModified().toInstant().toEpochMilli());
+                            ZonedDateTime lastModified = item.lastModified();
+                            if (lastModified != null) {
+                                info.put("ts", lastModified.toInstant().toEpochMilli());
                             } else {
                                 info.put("ts", System.currentTimeMillis());
                             }
@@ -336,8 +340,9 @@ public class MinioElFinderConnector {
                         info.put("phash", hash(objectName));
                         info.put("mime", "directory");
                         try {
-                            if (item.lastModified() != null) {
-                                info.put("ts", item.lastModified().toInstant().toEpochMilli());
+                            ZonedDateTime lastModified = item.lastModified();
+                            if (lastModified != null) {
+                                info.put("ts", lastModified.toInstant().toEpochMilli());
                             } else {
                                 info.put("ts", System.currentTimeMillis());
                             }

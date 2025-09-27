@@ -4,7 +4,10 @@
         xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/xml-screen-3.xsd"
         default-menu-title="Bucket" default-menu-index="1" menu-image="fa fa-database" menu-image-type="icon">
 
-    <subscreens default-item="FindBucket"/>
+    <subscreens default-item="FindBucket">
+        <subscreens-item name="FileExplorer" location="component://moqui-minio/screen/MinioApp/Bucket/FileExplorer.xml"
+                         menu-title="文件管理器" menu-index="2" menu-include="true"/>
+    </subscreens>
 
     <widgets>
         <subscreens-panel id="bucket-panel" type="popup"/>

@@ -13,22 +13,22 @@ along with this software (see the LICENSE.md file). If not, see
 <http://creativecommons.org/publicdomain/zero/1.0/>.
 -->
 <screen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/xml-screen-3.xsd"
-        default-menu-include="false" standalone="true">
+        default-menu-title="文件管理器" default-menu-index="2" menu-include="true"
+        require-authentication="true">
 
-    <parameter name="bucketName" required="true"/>
+    <parameter name="bucketName"/>
     <parameter name="resourceRoot"/>
 
     <actions>
+        <!-- 如果没有指定bucketName，显示选择存储桶的界面 -->
+        <if condition="!bucketName">
+            <script>sri.sendRedirectAndStopRender("../FindBucket")</script>
+        </if>
         <set field="resourceRoot" from="resourceRoot ?: ('minio://' + bucketName)"/>
     </actions>
 
     <widgets>
         <container-panel id="el-finder-container">
-            <panel-header>
-                <container>
-                    <label text="存储桶: ${bucketName}" type="h4"/>
-                </container>
-            </panel-header>
             <panel-center>
                 <include-screen location="component://moqui-minio/screen/MinioApp/Bucket/FileExplorer/ElFinder.xml">
                     <set field="bucketName" from="bucketName"/>
