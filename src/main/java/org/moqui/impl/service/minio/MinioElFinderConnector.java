@@ -1,12 +1,12 @@
 /*
- * This software is in the public domain under CC0 1.0 Universal plus a 
+ * This software is in the public domain under CC0 1.0 Universal plus a
  * Grant of Patent License.
- * 
+ *
  * To the extent possible under law, the author(s) have dedicated all
  * copyright and related and neighboring rights to this software to the
  * public domain worldwide. This software is distributed without any
  * warranty.
- * 
+ *
  * You should have received a copy of the CC0 Public Domain Dedication
  * along with this software (see the LICENSE.md file). If not, see
  * <http://creativecommons.org/publicdomain/zero/1.0/>.
@@ -39,7 +39,12 @@ import java.io.ByteArrayInputStream;
 import java.util.*;
 import java.util.Scanner;
 
-/** Used by the minio.MinioElFinderServices.run#ElfinderCommand service. */
+/**
+ * MinIO ElFinder连接器
+ *
+ * 为ElFinder文件管理器提供MinIO后端支持，实现文件和目录的浏览、操作功能
+ * 使用统一的配置管理和客户端工厂模式
+ */
 public class MinioElFinderConnector {
     protected final static Logger logger = LoggerFactory.getLogger(MinioElFinderConnector.class);
 
@@ -50,21 +55,8 @@ public class MinioElFinderConnector {
     public MinioElFinderConnector(ExecutionContext ec, String bucketName) {
         this.ec = ec;
         this.bucketName = bucketName;
-        // 创建MinioClient实例，与MinioServiceRunner中的方法一致
-        this.minioClient = createMinioClient();
-    }
-
-    // 创建 MinIO 客户端的辅助方法，与MinioServiceRunner保持一致
-    private static MinioClient createMinioClient() {
-        // 从系统属性或环境变量读取配置
-        String endpoint = System.getProperty("minio.endpoint", "http://localhost:9000");
-        String accessKey = System.getProperty("minio.accessKey", "admin");
-        String secretKey = System.getProperty("minio.secretKey", "admin123");
-
-        return MinioClient.builder()
-                .endpoint(endpoint)
-                .credentials(accessKey, secretKey)
-                .build();
+        // 使用连接池获取MinIO客户端实例以提升性能
+        this.minioClient = MinioClientPool.getClient(ec.getFactory());
     }
 
     public String hash(String str) {

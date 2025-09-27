@@ -7,6 +7,10 @@ import org.moqui.context.ExecutionContext;
 import org.moqui.entity.EntityValue;
 import org.moqui.entity.EntityList;
 import org.moqui.entity.EntityFind;
+import org.moqui.impl.service.minio.MinioClientFactory;
+import org.moqui.impl.service.minio.MinioClientPool;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
 import java.util.Map;
@@ -15,19 +19,25 @@ import java.util.List;
 import java.util.ArrayList;
 import java.sql.Timestamp;
 
+/**
+ * MinIO服务运行器
+ *
+ * 包含所有MinIO相关的服务实现方法，提供存储桶管理、对象操作等功能
+ */
 public class MinioServiceRunner {
+    private static final Logger logger = LoggerFactory.getLogger(MinioServiceRunner.class);
 
-    // 创建 MinIO 客户端的辅助方法
-    private static MinioClient createMinioClient() {
-        // 从系统属性或环境变量读取配置
-        String endpoint = System.getProperty("minio.endpoint", "http://localhost:9000");
-        String accessKey = System.getProperty("minio.accessKey", "admin");
-        String secretKey = System.getProperty("minio.secretKey", "admin123");
-
-        return MinioClient.builder()
-                .endpoint(endpoint)
-                .credentials(accessKey, secretKey)
-                .build();
+    /**
+     * 创建MinIO客户端的辅助方法
+     * 使用连接池来提升性能和资源利用率
+     */
+    private static MinioClient createMinioClient(ExecutionContext ec) {
+        try {
+            return MinioClientPool.getClient(ec.getFactory());
+        } catch (Exception e) {
+            logger.error("Failed to create MinIO client", e);
+            throw new RuntimeException("Failed to create MinIO client: " + e.getMessage(), e);
+        }
     }
 
     public static Map<String, Object> createBucket(ExecutionContext ec) {
@@ -75,7 +85,7 @@ public class MinioServiceRunner {
             }
 
             // 获取 MinIO 客户端
-            MinioClient minioClient = createMinioClient();
+            MinioClient minioClient = createMinioClient(ec);
 
             // 检查 MinIO 中是否已存在同名 bucket
             boolean bucketExists = minioClient.bucketExists(
@@ -188,7 +198,7 @@ public class MinioServiceRunner {
             ec.getLogger().info("找到要删除的 bucket 记录: " + bucketId);
 
             // 获取 MinIO 客户端
-            MinioClient minioClient = createMinioClient();
+            MinioClient minioClient = createMinioClient(ec);
             ec.getLogger().info("成功创建 MinIO 客户端");
 
             // 检查并删除 MinIO bucket
@@ -363,7 +373,7 @@ public class MinioServiceRunner {
             // 检查 MinIO 中的实际状态
             boolean existsInMinio = false;
             try {
-                MinioClient minioClient = createMinioClient();
+                MinioClient minioClient = createMinioClient(ec);
                 existsInMinio = minioClient.bucketExists(
                         BucketExistsArgs.builder().bucket(bucketId).build()
                 );
@@ -479,7 +489,7 @@ public class MinioServiceRunner {
             // 获取 MinIO 客户端
             MinioClient minioClient = null;
             try {
-                minioClient = createMinioClient();
+                minioClient = createMinioClient(ec);
             } catch (Exception e) {
                 ec.getLogger().warn("无法获取 MinIO 客户端，将跳过状态检查", e);
             }
@@ -605,7 +615,7 @@ public class MinioServiceRunner {
         byte[] fileBytes = (byte[]) parameters.get("fileBytes"); // Moqui 传输的文件内容
 
         try {
-            MinioClient client = createMinioClient();
+            MinioClient client = createMinioClient(ec);
 
             // 检查桶存在
             if (!client.bucketExists(BucketExistsArgs.builder().bucket(bucketId).build())) {
@@ -658,7 +668,7 @@ public class MinioServiceRunner {
         String objectName = (String) parameters.get("objectName");
 
         try {
-            MinioClient client = createMinioClient();
+            MinioClient client = createMinioClient(ec);
 
             client.removeObject(RemoveObjectArgs.builder()
                     .bucket(bucketId)
@@ -699,7 +709,7 @@ public class MinioServiceRunner {
         String userId = (String) parameters.get("userId");
 
         try {
-            MinioClient client = createMinioClient();
+            MinioClient client = createMinioClient(ec);
             Iterable<Result<Item>> objects = client.listObjects(
                     ListObjectsArgs.builder().bucket(bucketId).recursive(true).build()
             );
@@ -737,7 +747,7 @@ public class MinioServiceRunner {
         String objectName = (String) parameters.get("objectName");
 
         try {
-            MinioClient client = createMinioClient();
+            MinioClient client = createMinioClient(ec);
 
             // 生成预签名 URL（有效期1小时）
             String url = client.getPresignedObjectUrl(

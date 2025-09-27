@@ -3,15 +3,24 @@
 <moqui-conf xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
             xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/moqui-conf-3.xsd">
 
-    <!-- MinIO 配置 -->
+    <!-- MinIO 核心配置 -->
     <default-property name="minio.endpoint" value="http://localhost:9000"/>
     <default-property name="minio.accessKey" value="admin"/>
     <default-property name="minio.secretKey" value="admin123"/>
 
+    <!-- MinIO 高级配置 -->
+    <default-property name="minio.region" value="us-east-1"/>
+    <default-property name="minio.secure" value="false"/>
+    <default-property name="minio.connectionTimeout" value="10000"/>
+    <default-property name="minio.readTimeout" value="10000"/>
+    <default-property name="minio.writeTimeout" value="10000"/>
+
+    <!-- 工具工厂配置 -->
     <tools>
         <tool-factory class="org.moqui.impl.service.minio.MinioToolFactory" init-priority="20" disabled="false"/>
     </tools>
 
+    <!-- 屏幕集成配置 -->
     <screen-facade>
         <screen location="component://webroot/screen/webroot/apps.xml">
             <subscreens-item name="minio" menu-title="对象存储" menu-index="10" menu-include="true"
