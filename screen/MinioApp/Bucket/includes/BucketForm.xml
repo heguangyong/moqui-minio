@@ -3,63 +3,112 @@
         xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/xml-screen-3.xsd">
     <widgets>
         <form-single name="BucketForm">
-            <!-- Common fields for create and edit -->
-            <field name="bucketName">
-                <default-field title="${ec.l10n.localize('Bucket Name')}">
-                    <text-line size="30" required="true"/>
+            <!-- 隐藏字段 -->
+            <field name="userId">
+                <default-field><hidden default-value="${ec.user.userId}"/></default-field>
+            </field>
+
+            <!-- Bucket ID - 根据isCreate动态显示 -->
+            <field name="bucketId">
+                <conditional-field condition="isCreate == 'true'" title="${ec.l10n.localize('Bucket ID')}" tooltip="唯一的存储桶标识符">
+                    <text-line size="30" maxlength="63"/>
+                </conditional-field>
+                <default-field>
+                    <hidden/>
                 </default-field>
             </field>
+
+            <!-- Bucket Name - 始终显示 -->
+            <field name="bucketName">
+                <default-field title="${ec.l10n.localize('Bucket Name')}" tooltip="存储桶显示名称">
+                    <text-line size="30"/>
+                </default-field>
+            </field>
+
+            <!-- Description - 始终显示 -->
             <field name="description">
-                <default-field title="${ec.l10n.localize('Description')}">
+                <default-field title="${ec.l10n.localize('Description')}" tooltip="存储桶描述信息">
                     <text-area rows="3" cols="50"/>
                 </default-field>
             </field>
+
+            <!-- Quota Limit - 始终显示 -->
             <field name="quotaLimit">
-                <default-field title="${ec.l10n.localize('Quota Limit (Bytes)')}">
+                <default-field title="${ec.l10n.localize('Quota Limit (Bytes)')}" tooltip="存储桶配额限制（字节）">
                     <text-line size="20"/>
                 </default-field>
             </field>
 
-            <!-- Fields only for creation -->
-            <field-group name="CreateOnlyFields" condition="isCreate == 'true'">
-                <field name="bucketId">
-                    <default-field title="${ec.l10n.localize('Bucket ID')}">
-                        <text-line size="30" required="true"/>
-                    </default-field>
-                </field>
-                <field name="isPublic">
-                    <default-field title="${ec.l10n.localize('Public Access')}">
-                        <drop-down>
-                            <option key="N" text="${ec.l10n.localize('Private')}"/>
-                            <option key="Y" text="${ec.l10n.localize('Public')}"/>
-                        </drop-down>
-                    </default-field>
-                </field>
-                <field name="versioning">
-                    <default-field title="${ec.l10n.localize('Versioning')}">
-                        <drop-down>
-                            <option key="N" text="${ec.l10n.localize('Disabled')}"/>
-                            <option key="Y" text="${ec.l10n.localize('Enabled')}"/>
-                        </drop-down>
-                    </default-field>
-                </field>
-                <field name="encryption">
-                    <default-field title="${ec.l10n.localize('Encryption')}">
-                        <drop-down>
-                            <option key="N" text="${ec.l10n.localize('Disabled')}"/>
-                            <option key="Y" text="${ec.l10n.localize('Enabled')}"/>
-                        </drop-down>
-                    </default-field>
-                </field>
-            </field-group>
+            <!-- Public Access - 仅创建时显示 -->
+            <field name="isPublic">
+                <conditional-field condition="isCreate == 'true'" title="${ec.l10n.localize('Public Access')}" tooltip="是否允许公共访问">
+                    <drop-down>
+                        <option key="N" text="${ec.l10n.localize('Private')}"/>
+                        <option key="Y" text="${ec.l10n.localize('Public')}"/>
+                    </drop-down>
+                </conditional-field>
+                <default-field><ignored/></default-field>
+            </field>
 
-            <!-- Hidden fields -->
-            <field name="bucketId" condition="isCreate != 'true'">
-                <default-field><hidden/></default-field>
+            <!-- Versioning - 仅创建时显示 -->
+            <field name="versioning">
+                <conditional-field condition="isCreate == 'true'" title="${ec.l10n.localize('Versioning')}" tooltip="是否启用版本控制">
+                    <drop-down>
+                        <option key="N" text="${ec.l10n.localize('Disabled')}"/>
+                        <option key="Y" text="${ec.l10n.localize('Enabled')}"/>
+                    </drop-down>
+                </conditional-field>
+                <default-field><ignored/></default-field>
             </field>
-            <field name="userId">
-                <default-field><hidden/></default-field>
+
+            <!-- Encryption - 仅创建时显示 -->
+            <field name="encryption">
+                <conditional-field condition="isCreate == 'true'" title="${ec.l10n.localize('Encryption')}" tooltip="是否启用服务器端加密">
+                    <drop-down>
+                        <option key="N" text="${ec.l10n.localize('Disabled')}"/>
+                        <option key="Y" text="${ec.l10n.localize('Enabled')}"/>
+                    </drop-down>
+                </conditional-field>
+                <default-field><ignored/></default-field>
             </field>
+
+            <!-- Submit Button -->
+            <field name="submitButton">
+                <default-field title="">
+                    <submit text="${isCreate == 'true' ? ec.l10n.localize('Create') : ec.l10n.localize('Update')}"/>
+                </default-field>
+            </field>
+
+            <!-- 表单布局 - 在所有field定义之后 -->
+            <field-layout>
+                <!-- 基本信息行 -->
+                <field-row>
+                    <field-ref name="bucketId"/>
+                    <field-ref name="bucketName"/>
+                </field-row>
+
+                <!-- 配置行 -->
+                <field-row>
+                    <field-ref name="isPublic"/>
+                    <field-ref name="versioning"/>
+                </field-row>
+
+                <!-- 高级配置行 -->
+                <field-row>
+                    <field-ref name="encryption"/>
+                    <field-ref name="quotaLimit"/>
+                </field-row>
+
+                <!-- 描述行 -->
+                <field-row>
+                    <field-ref name="description"/>
+                </field-row>
+
+                <!-- 提交按钮行 -->
+                <field-row>
+                    <field-ref name="submitButton"/>
+                </field-row>
+            </field-layout>
         </form-single>
     </widgets>
 </screen>
