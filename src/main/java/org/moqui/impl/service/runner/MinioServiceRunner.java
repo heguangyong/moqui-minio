@@ -402,7 +402,9 @@ public class MinioServiceRunner {
 
         try {
             String userId = (String) parameters.get("userId");
+            String bucketId = (String) parameters.get("bucketId");
             String bucketName = (String) parameters.get("bucketName");
+            String description = (String) parameters.get("description");
             String status = (String) parameters.get("status");
             String isPublic = (String) parameters.get("isPublic");
 
@@ -451,8 +453,14 @@ public class MinioServiceRunner {
             }
 
             // 应用其他过滤条件
+            if (bucketId != null && !bucketId.trim().isEmpty()) {
+                bucketFind.condition("bucketId", "like", "%" + bucketId + "%");
+            }
             if (bucketName != null && !bucketName.trim().isEmpty()) {
                 bucketFind.condition("bucketName", "like", "%" + bucketName + "%");
+            }
+            if (description != null && !description.trim().isEmpty()) {
+                bucketFind.condition("description", "like", "%" + description + "%");
             }
             if (status != null && !status.trim().isEmpty()) {
                 bucketFind.condition("status", status);
@@ -478,15 +486,18 @@ public class MinioServiceRunner {
 
             for (EntityValue bucketRecord : bucketRecords) {
                 Map<String, Object> bucketInfo = new HashMap<>();
-                String bucketId = bucketRecord.getString("bucketId");
+                String currentBucketId = bucketRecord.getString("bucketId");
 
                 // 基本信息
-                bucketInfo.put("bucketId", bucketId);
+                bucketInfo.put("bucketId", currentBucketId);
                 bucketInfo.put("userId", bucketRecord.getString("userId"));
                 bucketInfo.put("bucketName", bucketRecord.getString("bucketName"));
                 bucketInfo.put("description", bucketRecord.getString("description"));
                 bucketInfo.put("quotaLimit", bucketRecord.getLong("quotaLimit"));
-                bucketInfo.put("usedStorage", bucketRecord.getLong("usedStorage"));
+
+                // 实时统计文件信息
+                long actualUsedStorage = 0L;
+                int fileCount = 0;
                 bucketInfo.put("status", bucketRecord.getString("status"));
                 bucketInfo.put("isPublic", bucketRecord.getString("isPublic"));
                 bucketInfo.put("versioning", bucketRecord.getString("versioning"));
@@ -499,10 +510,32 @@ public class MinioServiceRunner {
                     try {
                         boolean exists = minioClient.bucketExists(
                                 BucketExistsArgs.builder()
-                                        .bucket(bucketId)
+                                        .bucket(currentBucketId)
                                         .build()
                         );
                         bucketInfo.put("existsInMinio", exists);
+
+                        // 如果bucket存在，统计文件信息
+                        if (exists) {
+                            try {
+                                Iterable<Result<Item>> objects = minioClient.listObjects(
+                                        ListObjectsArgs.builder()
+                                                .bucket(currentBucketId)
+                                                .recursive(true)
+                                                .build()
+                                );
+
+                                for (Result<Item> objectResult : objects) {
+                                    Item item = objectResult.get();
+                                    if (!item.isDir()) {
+                                        fileCount++;
+                                        actualUsedStorage += item.size();
+                                    }
+                                }
+                            } catch (Exception e) {
+                                ec.getLogger().warn("获取bucket " + currentBucketId + " 文件统计失败", e);
+                            }
+                        }
 
                         // 如果状态不一致，更新数据库记录
                         if (!exists && "ACTIVE".equals(bucketRecord.getString("status"))) {
@@ -512,13 +545,25 @@ public class MinioServiceRunner {
                             bucketInfo.put("status", "ERROR");
                         }
 
+                        // 更新数据库中的usedStorage（如果实际值与数据库不同）
+                        Long dbUsedStorage = bucketRecord.getLong("usedStorage");
+                        if (exists && dbUsedStorage != null && Math.abs(dbUsedStorage - actualUsedStorage) > 1024) { // 差异超过1KB才更新
+                            bucketRecord.set("usedStorage", actualUsedStorage);
+                            bucketRecord.set("lastModifiedDate", new Timestamp(System.currentTimeMillis()));
+                            bucketRecord.update();
+                        }
+
                     } catch (Exception e) {
-                        ec.getLogger().warn("检查 bucket 状态失败: " + bucketId, e);
+                        ec.getLogger().warn("检查 bucket 状态失败: " + currentBucketId, e);
                         bucketInfo.put("existsInMinio", false);
                     }
                 } else {
                     bucketInfo.put("existsInMinio", null);
                 }
+
+                // 设置统计信息
+                bucketInfo.put("usedStorage", actualUsedStorage);
+                bucketInfo.put("fileCount", fileCount);
 
                 bucketList.add(bucketInfo);
             }

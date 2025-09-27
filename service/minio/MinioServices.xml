@@ -75,8 +75,14 @@
             <parameter name="userId" type="String" required="false">
                 <description>Filter by specific user (null for admins means show all users' buckets)</description>
             </parameter>
+            <parameter name="bucketId" type="String" required="false">
+                <description>Filter by bucket ID (partial match)</description>
+            </parameter>
             <parameter name="bucketName" type="String" required="false">
                 <description>Filter by bucket name (partial match)</description>
+            </parameter>
+            <parameter name="description" type="String" required="false">
+                <description>Filter by description (partial match)</description>
             </parameter>
             <parameter name="status" type="String" required="false">
                 <description>Filter by status (ACTIVE, INACTIVE, ERROR, etc.)</description>
