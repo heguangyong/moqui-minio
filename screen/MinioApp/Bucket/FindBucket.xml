@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <screen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:noNamespaceSchemaLocation="http://moqui.org/xsd/xml-screen-3.xsd"
-        default-menu-title="${ec.l10n.localize('Bucket Management')}"
+        default-menu-title="${ec.l10n.localize('存储桶管理')}"
         default-menu-index="10"
         default-menu-include="true"
         require-authentication="true">
@@ -40,21 +40,26 @@
     </transition>
 
     <actions>
-        <set field="userId" from="ec.user.userId"/>
         <set field="isAdmin" from="ec.user.isInGroup('ADMIN') || ec.user.isInGroup('ADMIN_ADV')"/>
-        <set field="scope" from="scope ?: 'user'"/>
+
+        <!-- 简化的权限逻辑：管理员传null查看所有，普通用户传当前用户ID -->
         <service-call name="minio.MinioServices.list#Bucket"
-                      in-map="[userId:userId, scope:scope, pageIndex:pageIndex, pageSize:pageSize, bucketName:bucketName]"
+                      in-map="[userId:(isAdmin ? null : ec.user.userId),
+                               bucketName:bucketName,
+                               pageIndex:pageIndex,
+                               pageSize:pageSize]"
                       out-map="context"/>
     </actions>
 
     <widgets>
-            <!-- Bucket Management Header -->
-        <container><label text="${ec.l10n.localize('Bucket Management')}" type="h2"/></container>
-
-            <!-- Toolbar -->
-            <container>
-                <container-dialog id="CreateBucketDialog" button-text="${ec.l10n.localize('Create Bucket')}" type="primary">
+        <container-box>
+            <!-- 第一排：左边标题，右边按钮 -->
+            <box-header>
+                <label text="${ec.l10n.localize('存储桶管理')}" type="h5"/>
+            </box-header>
+            <box-toolbar>
+                <!-- 创建存储桶按钮 -->
+                <container-dialog id="CreateBucketDialog" button-text="${ec.l10n.localize('创建存储桶')}">
                     <form-single name="CreateBucketForm" transition="createBucket">
                         <!-- Hidden fields -->
                         <field name="isCreate"><default-field><hidden default-value="true"/></default-field></field>
@@ -62,127 +67,134 @@
 
                         <!-- Visible fields -->
                         <field name="bucketId">
-                            <default-field title="${ec.l10n.localize('Bucket ID')}">
+                            <default-field title="${ec.l10n.localize('存储桶ID')}">
                                 <text-line size="30" maxlength="63"/>
                             </default-field>
                         </field>
 
                         <field name="bucketName">
-                            <default-field title="${ec.l10n.localize('Bucket Name')}">
+                            <default-field title="${ec.l10n.localize('存储桶名称')}">
                                 <text-line size="30"/>
                             </default-field>
                         </field>
 
                         <field name="description">
-                            <default-field title="${ec.l10n.localize('Description')}">
+                            <default-field title="${ec.l10n.localize('描述')}">
                                 <text-area rows="3" cols="50"/>
                             </default-field>
                         </field>
 
                         <field name="submitButton">
                             <default-field title="">
-                                <submit text="${ec.l10n.localize('Create')}"/>
+                                <submit text="${ec.l10n.localize('创建')}"/>
                             </default-field>
                         </field>
                     </form-single>
                 </container-dialog>
+            </box-toolbar>
 
-                <section name="adminView" condition="isAdmin">
-                    <widgets>
-                        <container>
-                            <link url="." text="${ec.l10n.localize('查看我的网盘')}" parameter-map="[scope:'user']" condition="scope == 'all'"/>
-                            <link url="." text="${ec.l10n.localize('查看所有网盘')}" parameter-map="[scope:'all']" condition="scope != 'all'"/>
-                        </container>
-                    </widgets>
-                </section>
-            </container>
+            <!-- 第二排：左边搜索和列表，右边分页 -->
+            <box-body>
+                <form-list name="ListBuckets" list="bucketList" skip-form="true" header-dialog="true" select-columns="true"
+                           show-csv-button="true" show-text-button="true" show-pdf-button="true" paginate="true">
 
-            <!-- Content -->
-            <container>
-            <!-- Search Form -->
-            <form-single name="SearchForm" transition="." map="ec.web.parameters">
-                <field name="bucketName">
-                    <default-field title="${ec.l10n.localize('Bucket Name')}">
-                        <text-line size="30"/>
-                    </default-field>
-                </field>
-                <field name="submitButton">
-                    <default-field title="${ec.l10n.localize('Search')}">
-                        <submit/>
-                    </default-field>
-                </field>
+                    <!-- 存储桶ID -->
+                    <field name="bucketId">
+                        <header-field title="${ec.l10n.localize('存储桶ID')}"><text-find hide-options="true"/></header-field>
+                        <default-field>
+                            <link url="bucketDetail" text="${bucketId}" link-type="anchor">
+                                <parameter name="bucketId" from="bucketId"/>
+                            </link>
+                        </default-field>
+                    </field>
 
-                <field-layout>
-                    <field-row>
-                        <field-ref name="bucketName"/>
-                        <field-ref name="submitButton"/>
-                    </field-row>
-                </field-layout>
-            </form-single>
+                    <!-- 存储桶名称 -->
+                    <field name="bucketName">
+                        <header-field title="${ec.l10n.localize('存储桶名称')}" show-order-by="case-insensitive"><text-find/></header-field>
+                        <default-field>
+                            <link url="bucketDetail" text="${bucketName}" link-type="anchor">
+                                <parameter name="bucketId" from="bucketId"/>
+                            </link>
+                        </default-field>
+                    </field>
 
-            <!-- Bucket List -->
-            <form-list name="ListBuckets" list="bucketList" paginate="true" skip-form="true">
-                <field name="bucketId">
-                    <header-field title="${ec.l10n.localize('Bucket ID')}"/>
-                    <default-field><display/></default-field>
-                </field>
-                <field name="bucketName">
-                    <header-field title="${ec.l10n.localize('Bucket Name')}"/>
-                    <default-field>
-                        <link url="bucketDetail" text="${bucketName}" link-type="anchor">
-                            <parameter name="bucketId" from="bucketId"/>
-                        </link>
-                    </default-field>
-                </field>
-                <field name="quotaLimit">
-                    <header-field title="${ec.l10n.localize('Quota Limit (Bytes)')}"/>
-                    <default-field><display/></default-field>
-                </field>
-                <field name="createdDate">
-                    <header-field title="${ec.l10n.localize('Created Date')}"/>
-                    <default-field><display format="yyyy-MM-dd HH:mm:ss"/></default-field>
-                </field>
-                <field name="actions">
-                    <header-field title="${ec.l10n.localize('Actions')}"/>
-                    <default-field>
-                        <link url="deleteBucket" text="${ec.l10n.localize('Delete')}" confirmation="确定要删除这个网盘吗？删除后将无法恢复。">
-                            <parameter name="bucketId" from="bucketId"/>
-                        </link>
-                        <container-dialog id="EditBucketDialog_${bucketId}" button-text="${ec.l10n.localize('Edit')}">
-                            <form-single name="EditBucketForm" transition="updateBucket" map="bucketList_entry">
-                                <!-- Hidden fields -->
-                                <field name="bucketId"><default-field><hidden/></default-field></field>
-                                <field name="userId"><default-field><hidden default-value="${ec.user.userId}"/></default-field></field>
+                    <!-- 创建者 - 仅管理员可见，简化为文本输入 -->
+                    <field name="userId">
+                        <header-field title="${ec.l10n.localize('创建者ID')}" show-order-by="true"><text-find/></header-field>
+                        <conditional-field condition="isAdmin">
+                            <display-entity entity-name="moqui.security.UserAccount" text="${firstName} ${lastName}"/>
+                        </conditional-field>
+                        <default-field><ignored/></default-field>
+                    </field>
 
-                                <!-- Editable fields -->
-                                <field name="bucketName">
-                                    <default-field title="${ec.l10n.localize('Bucket Name')}">
-                                        <text-line size="30"/>
-                                    </default-field>
-                                </field>
+                    <!-- 配额限制 -->
+                    <field name="quotaLimit">
+                        <header-field title="${ec.l10n.localize('配额限制(字节)')}" show-order-by="true"/>
+                        <default-field><display/></default-field>
+                    </field>
 
-                                <field name="description">
-                                    <default-field title="${ec.l10n.localize('Description')}">
-                                        <text-area rows="3" cols="50"/>
-                                    </default-field>
-                                </field>
+                    <!-- 描述 -->
+                    <field name="description">
+                        <header-field title="${ec.l10n.localize('描述')}" show-order-by="case-insensitive"><text-find/></header-field>
+                        <default-field><display/></default-field>
+                    </field>
 
-                                <field name="quotaLimit">
-                                    <default-field title="${ec.l10n.localize('Quota Limit (Bytes)')}">
-                                        <text-line size="20"/>
-                                    </default-field>
-                                </field>
+                    <!-- 创建日期 -->
+                    <field name="createdDate">
+                        <header-field title="${ec.l10n.localize('创建日期')}" show-order-by="true"><date-period/></header-field>
+                        <default-field><display format="yyyy-MM-dd HH:mm:ss"/></default-field>
+                    </field>
 
-                                <field name="submitButton">
-                                    <default-field title="">
-                                        <submit text="${ec.l10n.localize('Update')}"/>
-                                    </default-field>
-                                </field>
-                            </form-single>
-                        </container-dialog>
-                    </default-field>
-                </field>
-            </form-list>
-            </container>
+                    <!-- 操作 -->
+                    <field name="actions">
+                        <header-field title="${ec.l10n.localize('操作')}"/>
+                        <default-field>
+                            <link url="deleteBucket" text="${ec.l10n.localize('删除')}" confirmation="确定要删除这个存储桶吗？删除后将无法恢复。">
+                                <parameter name="bucketId" from="bucketId"/>
+                            </link>
+                            <container-dialog id="EditBucketDialog_${bucketId}" button-text="${ec.l10n.localize('编辑')}">
+                                <form-single name="EditBucketForm" transition="updateBucket" map="bucketList_entry">
+                                    <!-- Hidden fields -->
+                                    <field name="bucketId"><default-field><hidden/></default-field></field>
+                                    <field name="userId"><default-field><hidden default-value="${ec.user.userId}"/></default-field></field>
+
+                                    <!-- Editable fields -->
+                                    <field name="bucketName">
+                                        <default-field title="${ec.l10n.localize('存储桶名称')}">
+                                            <text-line size="30"/>
+                                        </default-field>
+                                    </field>
+
+                                    <field name="description">
+                                        <default-field title="${ec.l10n.localize('描述')}">
+                                            <text-area rows="3" cols="50"/>
+                                        </default-field>
+                                    </field>
+
+                                    <field name="quotaLimit">
+                                        <default-field title="${ec.l10n.localize('配额限制(字节)')}">
+                                            <text-line size="20"/>
+                                        </default-field>
+                                    </field>
+
+                                    <field name="submitButton">
+                                        <default-field title="">
+                                            <submit text="${ec.l10n.localize('更新')}"/>
+                                        </default-field>
+                                    </field>
+                                </form-single>
+                            </container-dialog>
+                        </default-field>
+                    </field>
+
+                    <!-- 搜索按钮 -->
+                    <field name="findButton">
+                        <header-field title=""><submit text="${ec.l10n.localize('搜索')}"/></header-field>
+                        <default-field><ignored/></default-field>
+                    </field>
+
+                </form-list>
+            </box-body>
+        </container-box>
     </widgets>
 </screen>

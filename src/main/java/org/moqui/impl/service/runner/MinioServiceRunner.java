@@ -393,43 +393,65 @@ public class MinioServiceRunner {
 
         try {
             String userId = (String) parameters.get("userId");
+            String bucketName = (String) parameters.get("bucketName");
             String status = (String) parameters.get("status");
-            String scope = (String) parameters.get("scope");
             String isPublic = (String) parameters.get("isPublic");
-
-            // 参数验证
-            if (userId == null || userId.trim().isEmpty()) {
-                ec.getMessage().addError("userId 不能为空");
-                return result;
-            }
 
             // 检查用户是否具有管理员权限
             boolean isAdmin = ec.getUser().isInGroup("ADMIN") || ec.getUser().isInGroup("ADMIN_ADV");
+            String currentUserId = ec.getUser().getUserId();
+
+            // 权限逻辑：
+            // 1. 如果userId为null且是管理员 -> 查看所有用户的存储桶
+            // 2. 如果userId为null且不是管理员 -> 只查看当前用户的存储桶
+            // 3. 如果userId不为null -> 查看指定用户的存储桶（需要权限验证）
+            String queryUserId = userId;
+            boolean viewAllUsers = false;
+
+            if (userId == null || userId.trim().isEmpty()) {
+                if (isAdmin) {
+                    // 管理员可以查看所有用户的存储桶
+                    viewAllUsers = true;
+                    ec.getLogger().info("管理员用户 " + currentUserId + " 查看所有用户的存储桶");
+                } else {
+                    // 普通用户只能查看自己的存储桶
+                    queryUserId = currentUserId;
+                    ec.getLogger().info("普通用户 " + currentUserId + " 查看自己的存储桶");
+                }
+            } else {
+                // 指定了特定用户ID
+                if (!isAdmin && !userId.equals(currentUserId)) {
+                    ec.getMessage().addError("没有权限查看其他用户的存储桶");
+                    return result;
+                }
+                ec.getLogger().info("查看用户 " + userId + " 的存储桶");
+            }
 
             Integer pageIndex = (Integer) parameters.getOrDefault("pageIndex", 0);
-            Integer pageSize = (Integer) parameters.getOrDefault("pageSize", 5);
+            Integer pageSize = (Integer) parameters.getOrDefault("pageSize", 20);
             int offset = pageIndex * pageSize;
+
             // 构建查询
             EntityFind bucketFind = ec.getEntity().find("moqui.minio.Bucket")
                     .condition("status", "!=", "DELETED")
                     .orderBy("createdDate");
 
-            // 如果是管理员且scope为all，或者scope为all且用户有权限，则显示所有桶
-            // 否则只显示用户自己的桶
-            if ((isAdmin && "all".equals(scope)) || "all".equals(scope)) {
-                // 管理员查看所有桶或明确要求查看所有桶，不添加userId条件
-                ec.getLogger().info("管理员用户 " + userId + " 查看所有网盘");
-            } else {
-                // 普通用户只查看自己的桶
-                bucketFind.condition("userId", userId);
+            // 根据权限逻辑添加userId条件
+            if (!viewAllUsers) {
+                bucketFind.condition("userId", queryUserId);
             }
 
-            // 应用过滤条件
+            // 应用其他过滤条件
+            if (bucketName != null && !bucketName.trim().isEmpty()) {
+                bucketFind.condition("bucketName", "like", "%" + bucketName + "%");
+            }
             if (status != null && !status.trim().isEmpty()) {
                 bucketFind.condition("status", status);
             }
+            if (isPublic != null) {
+                bucketFind.condition("isPublic", isPublic);
+            }
 
-            if (isPublic != null) bucketFind.condition("isPublic", isPublic);
             // 先计算总数（clone 一份，避免 offset/limit 影响）
             long totalCount = bucketFind.useClone(true).count();
 
@@ -453,6 +475,7 @@ public class MinioServiceRunner {
                 bucketInfo.put("bucketId", bucketId);
                 bucketInfo.put("userId", bucketRecord.getString("userId"));
                 bucketInfo.put("bucketName", bucketRecord.getString("bucketName"));
+                bucketInfo.put("description", bucketRecord.getString("description"));
                 bucketInfo.put("quotaLimit", bucketRecord.getLong("quotaLimit"));
                 bucketInfo.put("usedStorage", bucketRecord.getLong("usedStorage"));
                 bucketInfo.put("status", bucketRecord.getString("status"));
@@ -492,19 +515,25 @@ public class MinioServiceRunner {
             }
 
             // 记录查询操作
-            logBucketOperation(ec, null, userId, "LIST", null, 0L, "SUCCESS", null);
+            logBucketOperation(ec, null, queryUserId != null ? queryUserId : currentUserId, "LIST", null, 0L, "SUCCESS", null);
 
-            ec.getLogger().info("查询用户 buckets 成功: userId=" + userId + ", 找到 " + bucketList.size() + " 个 buckets");
+            ec.getLogger().info("查询存储桶成功: 当前用户=" + currentUserId +
+                    ", 查询用户=" + (queryUserId != null ? queryUserId : "所有用户") +
+                    ", 找到 " + bucketList.size() + " 个存储桶");
 
+            // 设置标准的分页输出参数
             result.put("bucketList", bucketList);
-            result.put("totalCount", totalCount);
-            result.put("pageIndex", pageIndex);
-            result.put("pageSize", pageSize);
+            result.put("bucketListCount", (int) totalCount);
+            result.put("bucketListPageIndex", pageIndex);
+            result.put("bucketListPageSize", pageSize);
+            result.put("bucketListPageMaxIndex", pageSize > 0 ? (int) Math.ceil((double) totalCount / pageSize) - 1 : 0);
+            result.put("bucketListPageRangeLow", pageIndex * pageSize + 1);
+            result.put("bucketListPageRangeHigh", Math.min((pageIndex + 1) * pageSize, (int) totalCount));
             result.put("success", true);
 
         } catch (Exception e) {
             logBucketOperation(ec, null, (String) parameters.get("userId"), "LIST", null, 0L, "FAILURE", e.getMessage());
-            ec.getMessage().addError("查询 bucket 列表失败: " + e.getMessage());
+            ec.getMessage().addError("查询存储桶列表失败: " + e.getMessage());
             result.put("success", false);
             ec.getLogger().error("Failed to list MinIO buckets", e);
         }
