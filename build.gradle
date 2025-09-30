@@ -67,8 +67,12 @@ jar {
     archiveBaseName = jarBaseName
 }
 task copyDependencies { doLast {
-    copy { from (configurations.runtimeClasspath - project(':framework').configurations.runtimeClasspath - project(':framework').jar.archiveFile)
-        into file(projectDir.absolutePath + '/lib') }
+    copy {
+        from (configurations.runtimeClasspath - project(':framework').configurations.runtimeClasspath - project(':framework').jar.archiveFile)
+        into file(projectDir.absolutePath + '/lib')
+        exclude '**/moqui-framework*.jar'
+        exclude '**/moqui-util*.jar'
+    }
 } }
 copyDependencies.dependsOn cleanLib
 jar.dependsOn copyDependencies
