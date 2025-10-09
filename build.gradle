@@ -43,8 +43,14 @@ repositories {
 }
 
 // Log4J has annotation processors, disable to avoid warning
-tasks.withType(JavaCompile) { options.compilerArgs << "-proc:none" }
-tasks.withType(GroovyCompile) { options.compilerArgs << "-proc:none" }
+tasks.withType(JavaCompile) {
+    options.compilerArgs << "-proc:none"
+    options.encoding = 'UTF-8'
+}
+tasks.withType(GroovyCompile) {
+    options.compilerArgs << "-proc:none"
+    groovyOptions.encoding = 'UTF-8'
+}
 
 dependencies {
     implementation project(':framework')
