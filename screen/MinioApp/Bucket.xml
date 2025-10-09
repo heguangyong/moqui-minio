@@ -6,7 +6,7 @@
 
     <subscreens default-item="FindBucket">
         <subscreens-item name="FileExplorer" location="component://moqui-minio/screen/MinioApp/Bucket/FileExplorer.xml"
-                         menu-title="文件管理器" menu-index="2" menu-include="true"/>
+                         menu-title="文件管理器" menu-index="2" menu-include="false"/>
     </subscreens>
 
     <widgets>
