@@ -384,8 +384,8 @@ ls runtime/component/moqui-minio/lib/moqui-minio-*.jar
 ### 2. 前端库验证
 ```bash
 # 检查关键前端库是否存在
-ls runtime/base-component/webroot/screen/webroot/libs/vue/vue.min.js
-ls runtime/base-component/webroot/screen/webroot/libs/quasar/dist/quasar.umd.min.js
+ls runtime/base-component/webroot/screen/webroot/libs/vue3/vue.min.js
+ls runtime/base-component/webroot/screen/webroot/libs/quasar2/quasar.umd.min.js
 ls runtime/base-component/webroot/screen/webroot/libs/moment.js/moment-with-locales.min.js
 ```
 
