@@ -35,4 +35,27 @@
         </id>
     </resource>
 
+    <!-- ==================== V2 统一响应格式API ==================== -->
+    <resource name="v2" require-authentication="true">
+        <resource name="buckets">
+            <method type="get">
+                <service name="minio.MinioServices.list#BucketV2"/>
+            </method>
+            <method type="post">
+                <service name="minio.MinioServices.create#BucketV2"/>
+            </method>
+            <id name="bucketId">
+                <method type="get">
+                    <service name="minio.MinioServices.get#BucketV2"/>
+                </method>
+                <method type="patch">
+                    <service name="minio.MinioServices.update#BucketV2"/>
+                </method>
+                <method type="delete">
+                    <service name="minio.MinioServices.delete#BucketV2"/>
+                </method>
+            </id>
+        </resource>
+    </resource>
+
 </resource>
