@@ -3,6 +3,11 @@
            name="moqui-minio" version="1.0.0">
     <depends-on name="mantle-usl" version="2.2.0"/>
 
+    <!-- Service 定义文件 -->
+    <service-include location="component://moqui-minio/service/minio.xml"/>
+    <service-include location="component://moqui-minio/service/minio/MinioServices.xml"/>
+    <service-include location="component://moqui-minio/service/minio/ApiResponseServices.xml"/>
+
     <data-load>
         <data-file file="data/MinioL10nData.xml" type="seed-initial"/>
         <data-file file="data/MinioSecurityData.xml" type="seed"/>

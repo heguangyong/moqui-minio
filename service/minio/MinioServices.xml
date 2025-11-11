@@ -144,4 +144,159 @@
         </out-parameters>
     </service>
 
+    <!-- ==================== V2 统一响应格式服务 ==================== -->
+
+    <service verb="list" noun="BucketV2" authenticate="true" allow-remote="true">
+        <description>List buckets with unified response format V2</description>
+        <in-parameters>
+            <parameter name="userId" type="String" required="false"/>
+            <parameter name="bucketId" type="String" required="false"/>
+            <parameter name="bucketName" type="String" required="false"/>
+            <parameter name="status" type="String" required="false"/>
+            <parameter name="isPublic" type="String" required="false"/>
+            <parameter name="pageIndex" type="Integer" default-value="0"/>
+            <parameter name="pageSize" type="Integer" default-value="20"/>
+        </in-parameters>
+        <out-parameters>
+            <parameter name="response" type="Map"/>
+        </out-parameters>
+        <actions>
+            <script><![CDATA[
+                // Call original list service
+                Map listResult = ec.service.sync().name("minio.MinioServices.list#Bucket")
+                    .parameters(context).call()
+
+                // Wrap with unified response format
+                Map wrapResult = ec.service.sync().name("minio.ApiResponseServices.wrap#MinioListResponse")
+                    .parameters([
+                        items: listResult.bucketList ?: [],
+                        total: listResult.bucketListCount ?: 0,
+                        page: (listResult.bucketListPageIndex ?: 0) + 1,
+                        limit: listResult.bucketListPageSize ?: 20
+                    ]).call()
+
+                response = wrapResult.response
+            ]]></script>
+        </actions>
+    </service>
+
+    <service verb="create" noun="BucketV2" authenticate="true" allow-remote="true">
+        <description>Create bucket with unified response format V2</description>
+        <in-parameters>
+            <parameter name="bucketId" type="String" required="true"/>
+            <parameter name="userId" type="String" required="true"/>
+            <parameter name="bucketName" type="String" required="false"/>
+            <parameter name="description" type="String" required="false"/>
+            <parameter name="quotaLimit" type="Long" required="false"/>
+            <parameter name="isPublic" type="String" required="false"/>
+        </in-parameters>
+        <out-parameters>
+            <parameter name="response" type="Map"/>
+        </out-parameters>
+        <actions>
+            <script><![CDATA[
+                // Call original create service
+                Map createResult = ec.service.sync().name("minio.MinioServices.create#Bucket")
+                    .parameters(context).call()
+
+                // Wrap with unified response format
+                Map wrapResult = ec.service.sync().name("minio.ApiResponseServices.wrap#MinioBucketResponse")
+                    .parameters([
+                        bucketData: [bucketId: createResult.bucketId, success: createResult.success],
+                        bucketName: bucketId,
+                        operation: "create"
+                    ]).call()
+
+                response = wrapResult.response
+            ]]></script>
+        </actions>
+    </service>
+
+    <service verb="get" noun="BucketV2" authenticate="true" allow-remote="true">
+        <description>Get bucket info with unified response format V2</description>
+        <in-parameters>
+            <parameter name="bucketId" type="String" required="true"/>
+            <parameter name="userId" type="String" required="true"/>
+        </in-parameters>
+        <out-parameters>
+            <parameter name="response" type="Map"/>
+        </out-parameters>
+        <actions>
+            <script><![CDATA[
+                // Call original get service
+                Map getResult = ec.service.sync().name("minio.MinioServices.get#Bucket")
+                    .parameters(context).call()
+
+                // Wrap with unified response format
+                Map wrapResult = ec.service.sync().name("minio.ApiResponseServices.wrap#MinioBucketResponse")
+                    .parameters([
+                        bucketData: getResult.bucketInfo,
+                        bucketName: bucketId,
+                        operation: "read"
+                    ]).call()
+
+                response = wrapResult.response
+            ]]></script>
+        </actions>
+    </service>
+
+    <service verb="update" noun="BucketV2" authenticate="true" allow-remote="true">
+        <description>Update bucket with unified response format V2</description>
+        <in-parameters>
+            <parameter name="bucketId" type="String" required="true"/>
+            <parameter name="userId" type="String" required="true"/>
+            <parameter name="bucketName" type="String" required="false"/>
+            <parameter name="description" type="String" required="false"/>
+            <parameter name="quotaLimit" type="Long" required="false"/>
+        </in-parameters>
+        <out-parameters>
+            <parameter name="response" type="Map"/>
+        </out-parameters>
+        <actions>
+            <script><![CDATA[
+                // Call original update service
+                Map updateResult = ec.service.sync().name("minio.MinioServices.update#Bucket")
+                    .parameters(context).call()
+
+                // Wrap with unified response format
+                Map wrapResult = ec.service.sync().name("minio.ApiResponseServices.wrap#MinioBucketResponse")
+                    .parameters([
+                        bucketData: [success: updateResult.success],
+                        bucketName: bucketId,
+                        operation: "update"
+                    ]).call()
+
+                response = wrapResult.response
+            ]]></script>
+        </actions>
+    </service>
+
+    <service verb="delete" noun="BucketV2" authenticate="true" allow-remote="true">
+        <description>Delete bucket with unified response format V2</description>
+        <in-parameters>
+            <parameter name="bucketId" type="String" required="true"/>
+            <parameter name="userId" type="String" required="true"/>
+        </in-parameters>
+        <out-parameters>
+            <parameter name="response" type="Map"/>
+        </out-parameters>
+        <actions>
+            <script><![CDATA[
+                // Call original delete service
+                Map deleteResult = ec.service.sync().name("minio.MinioServices.delete#Bucket")
+                    .parameters(context).call()
+
+                // Wrap with unified response format
+                Map wrapResult = ec.service.sync().name("minio.ApiResponseServices.wrap#MinioBucketResponse")
+                    .parameters([
+                        bucketData: [success: deleteResult.success],
+                        bucketName: bucketId,
+                        operation: "delete"
+                    ]).call()
+
+                response = wrapResult.response
+            ]]></script>
+        </actions>
+    </service>
+
 </services>
